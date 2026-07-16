@@ -1,0 +1,94 @@
+@startuml c4-3-component
+' ShopFlow — C4 Level 3: Component (웹 애플리케이션 내부)
+!include <C4/C4_Component>
+
+title ShopFlow — C4 컴포넌트 (Level 3) · 웹 애플리케이션 내부(컨텍스트별)
+
+Person(buyer, "구매자")
+Person(seller, "판매자")
+System_Ext(pg, "결제 게이트웨이", "모의/실 PSP")
+ContainerDb(db, "PostgreSQL", "컨텍스트별 스키마")
+
+Container_Boundary(web, "웹 애플리케이션 (Spring Boot)") {
+
+  Boundary(bAccount, "계정 컨텍스트") {
+    Component(authCtl, "AuthController", "Spring MVC", "가입·로그인·로그아웃")
+    Component(userSvc, "UserService", "Service", "계정·역할")
+    Component(sellerSvc, "SellerService", "Service", "판매자 프로필(유형·사업자정보)")
+    Component(accRepo, "Account/SellerRepository", "Spring Data", "users/sellers")
+  }
+
+  Boundary(bProduct, "상품 컨텍스트") {
+    Component(prodCtl, "ProductController", "Spring MVC", "탐색·검색·상세·판매자 상품관리")
+    Component(prodSvc, "ProductService", "Service", "등록·수정·판매상태")
+    Component(prodRepo, "ProductRepository", "Spring Data", "products")
+  }
+
+  Boundary(bOrder, "주문 컨텍스트 (장바구니 포함)") {
+    Component(cartCtl, "CartController", "Spring MVC", "장바구니 담기·수정")
+    Component(checkoutCtl, "CheckoutController", "Spring MVC", "체크아웃·결제 요청")
+    Component(orderCtl, "OrderController", "Spring MVC", "주문 조회")
+    Component(checkoutSvc, "CheckoutService", "Service(오케스트레이션)", "금액검증→선점→결제→주문/SubOrder 생성")
+    Component(orderSvc, "OrderService", "Service", "주문·SubOrder·상태 집계")
+    Component(orderRepo, "Order/CartRepository", "Spring Data", "orders/sub_orders/order_lines/carts")
+  }
+
+  Boundary(bPayment, "결제 컨텍스트") {
+    Component(paySvc, "PaymentService", "Service", "멱등 결제 처리")
+    Component(payGw, "PaymentGateway", "Port(interface)", "결제 어댑터 계약")
+    Component(mockGw, "MockPaymentGateway", "Adapter", "성공/실패/멱등 시뮬레이션")
+    Component(idemStore, "IdempotencyStore", "Service", "멱등키 저장·조회(정확히 1회)")
+    Component(payRepo, "PaymentRepository", "Spring Data", "payments/payment_idempotency")
+  }
+
+  Boundary(bInventory, "재고 컨텍스트") {
+    Component(resvSvc, "ReservationService", "Service", "조건부 UPDATE 선점·확정·해제")
+    Component(sweeper, "ExpirySweeper", "@Scheduled", "TTL 만료 선점 해제(SC-005)")
+    Component(resvRepo, "ReservationRepository", "Spring Data", "stock_reservations")
+  }
+
+  Boundary(bDelivery, "배송 컨텍스트") {
+    Component(delCtl, "DeliveryController", "Spring MVC", "판매자 배송 전이(ship/deliver)")
+    Component(delSvc, "DeliveryService", "Service", "PENDING→SHIPPING→DELIVERED")
+    Component(delRepo, "DeliveryRepository", "Spring Data", "deliveries")
+  }
+
+  Component(security, "SecurityConfig", "Spring Security (공통)", "인증·인가·CSRF")
+}
+
+' ---- 사용자 → 컨트롤러 ----
+Rel(buyer, checkoutCtl, "결제 요청", "HTTPS")
+Rel(buyer, cartCtl, "장바구니", "HTTPS")
+Rel(buyer, prodCtl, "탐색·상세", "HTTPS")
+Rel(buyer, orderCtl, "주문 조회", "HTTPS")
+Rel(seller, prodCtl, "상품·재고 관리", "HTTPS")
+Rel(seller, delCtl, "배송 전이", "HTTPS")
+Rel(buyer, authCtl, "가입·로그인", "HTTPS")
+
+' ---- 체크아웃 오케스트레이션 ----
+Rel(checkoutCtl, checkoutSvc, "체크아웃 실행")
+Rel(checkoutSvc, idemStore, "멱등키 확인/기록")
+Rel(checkoutSvc, resvSvc, "재고 선점(TTL)")
+Rel(checkoutSvc, paySvc, "결제 요청(멱등키)")
+Rel(checkoutSvc, orderSvc, "주문·SubOrder 생성")
+Rel(checkoutSvc, delSvc, "Delivery(PENDING) 생성")
+
+' ---- 결제 어댑터 ----
+Rel(paySvc, payGw, "authorize()")
+Rel(payGw, mockGw, "구현")
+Rel(mockGw, pg, "승인 요청", "HTTPS")
+
+' ---- 배송 → 주문 집계 ----
+Rel(delSvc, orderSvc, "상태 집계 갱신")
+Rel(sweeper, resvSvc, "만료 해제")
+
+' ---- 리포지토리 → DB ----
+Rel(accRepo, db, "R/W", "JDBC")
+Rel(prodRepo, db, "R/W", "JDBC")
+Rel(orderRepo, db, "R/W", "JDBC")
+Rel(payRepo, db, "R/W", "JDBC")
+Rel(resvRepo, db, "R/W", "JDBC")
+Rel(delRepo, db, "R/W", "JDBC")
+
+SHOW_LEGEND()
+@enduml

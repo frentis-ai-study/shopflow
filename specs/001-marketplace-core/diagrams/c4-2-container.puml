@@ -1,0 +1,30 @@
+@startuml c4-2-container
+' ShopFlow — C4 Level 2: Container
+!include <C4/C4_Container>
+
+title ShopFlow — C4 컨테이너 (Level 2) · 현재=추출 가능 모듈러 모놀리스 (ADR-0010)
+
+Person(buyer, "구매자")
+Person(seller, "판매자")
+System_Ext(pg, "결제 게이트웨이", "모의(MVP) / 실 PSP(후속)")
+
+System_Boundary(sf, "ShopFlow") {
+  Container(web, "웹 애플리케이션", "Java 21, Spring Boot MVC + Thymeleaf(SSR), Spring Security", "6개 컨텍스트 모듈(계정·상품·주문·결제·재고·배송)을 계층형으로 제공. 서버사이드 렌더링")
+  Container(sched, "스케줄러", "Spring @Scheduled (웹 앱 내 실행)", "재고 선점 TTL 만료 스윕 → 재고 복원")
+  ContainerDb(db, "관계형 DB", "PostgreSQL 16", "컨텍스트별 스키마. 경계 넘는 하드 FK 없음. Flyway 마이그레이션")
+}
+
+Rel(buyer, web, "탐색·장바구니·결제·주문 조회", "HTTPS")
+Rel(seller, web, "상품·재고 관리·배송 전이", "HTTPS")
+Rel(web, db, "읽기/쓰기 (트랜잭션)", "JDBC")
+Rel(sched, db, "만료 선점 해제", "JDBC")
+Rel(web, pg, "결제 승인 요청(멱등키)", "HTTPS")
+
+note as N1
+  목표 아키텍처(ADR-0010): 각 컨텍스트를 별도 서비스+DB로 추출,
+  프론트엔드를 별도 컨테이너로 분리. 컨텍스트 간 ID 참조·이벤트로 결합.
+  분리 시 체크아웃은 사가+보상으로 전환.
+end note
+
+SHOW_LEGEND()
+@enduml
