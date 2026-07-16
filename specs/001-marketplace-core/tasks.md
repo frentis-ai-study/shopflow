@@ -118,12 +118,12 @@ MVC는 후행) · PostgreSQL 16 · Flyway · Maven · JUnit 5 + Testcontainers
 
 **목표**: 판매자가 하위주문 배송을 배송중→배송완료로 전이, 주문 집계 반영. **의존**: US1.
 
-- [ ] T053 [P] [US4] `test/unit/delivery/DeliveryTransitionTest.java` — 허용/금지 전이
-- [ ] T054 [P] [US4] `test/web/delivery/DeliveryOpsWebTest.java` — 소유 판매자만 전이(403)
-- [ ] T055 [P] [US4] `test/integration/DeliveryFulfillmentIT.java` — 배송중→배송완료→집계 (SC-006)
-- [ ] T056 [US4] `delivery/repository/DeliveryRepository.java`(조회) + `delivery/domain/DeliveryService.java`(전이·감사)
-- [ ] T057 [US4] `delivery/rest/DeliveryOpsController.java` — ship/deliver 커스텀 REST(소유권)
-- [ ] T058 [US4] `order/domain/OrderService.java` 확장 — Delivery 상태 기반 OrderStatus 집계(상호배타 가드)
+- [X] T053 [P] [US4] `test/unit/delivery/DeliveryTransitionTest.java` — 허용/금지 전이
+- [X] T054 [P] [US4] `test/web/delivery/DeliveryOpsWebTest.java` — 소유 판매자만 전이(403)
+- [X] T055 [P] [US4] `test/integration/DeliveryFulfillmentIT.java` — 배송중→배송완료→집계 (SC-006)
+- [X] T056 [US4] `delivery/repository/DeliveryRepository.java`(조회) + `delivery/domain/DeliveryService.java`(전이·감사)
+- [X] T057 [US4] `delivery/rest/DeliveryOpsController.java` — ship/deliver 커스텀 REST(소유권)
+- [X] T058 [US4] `order/domain/OrderService.java` 확장 — Delivery 상태 기반 OrderStatus 집계(상호배타 가드)
 
 ---
 
@@ -131,9 +131,9 @@ MVC는 후행) · PostgreSQL 16 · Flyway · Maven · JUnit 5 + Testcontainers
 
 **목표**: 본인 주문 목록·상세(판매자별 이행 상태) API. **의존**: US1.
 
-- [ ] T059 [P] [US5] `test/web/order/OrderQueryTest.java` — 본인 주문만(권한)·상태 정확성
-- [ ] T060 [P] [US5] `test/integration/OrderHistoryIT.java` — 다중 판매자 주문 상세
-- [ ] T061 [US5] `order/repository/OrderRepository.java` 조회 노출/프로젝션(본인·판매자별 이행 상태)
+- [X] T059 [P] [US5] `test/web/order/OrderQueryTest.java` — 본인 주문만(권한)·상태 정확성
+- [X] T060 [P] [US5] `test/integration/OrderHistoryIT.java` — 다중 판매자 주문 상세
+- [X] T061 [US5] `order/repository/OrderRepository.java` 조회 노출/프로젝션(본인·판매자별 이행 상태)
 
 ---
 

@@ -50,6 +50,10 @@ public class SubOrder {
         return sellerId;
     }
 
+    public String getSellerStoreNameSnapshot() {
+        return sellerStoreNameSnapshot;
+    }
+
     public long getSubtotalKrw() {
         return subtotalKrw;
     }

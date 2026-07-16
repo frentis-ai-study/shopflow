@@ -31,6 +31,17 @@ public class OrderService {
         this.clock = clock;
     }
 
+    /** 배송 상태 집계로 주문 상태 갱신(FR-022). */
+    @Transactional
+    public void updateStatus(Long orderId, OrderStatus status) {
+        orders.findById(orderId).ifPresent(o -> o.changeStatus(status));
+    }
+
+    @Transactional(readOnly = true)
+    public List<SubOrder> subOrdersOf(Long orderId) {
+        return subOrders.findByOrderId(orderId);
+    }
+
     /** 결제 시점 라인 스펙(스냅샷 값). */
     public record LineSpec(Long productId, Long sellerId, String sellerStoreName,
                            String productName, long unitPriceKrw, int quantity) {
