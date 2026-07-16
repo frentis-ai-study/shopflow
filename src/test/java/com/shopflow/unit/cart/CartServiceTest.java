@@ -9,6 +9,7 @@ import com.shopflow.order.repository.CartRepository;
 import com.shopflow.product.domain.Product;
 import com.shopflow.product.domain.ProductService;
 import org.junit.jupiter.api.Test;
+import org.springframework.transaction.PlatformTransactionManager;
 
 import java.util.Optional;
 
@@ -24,7 +25,9 @@ class CartServiceTest {
     private final CartRepository carts = mock(CartRepository.class);
     private final CartItemRepository items = mock(CartItemRepository.class);
     private final ProductService productService = mock(ProductService.class);
-    private final CartService service = new CartService(carts, items, productService);
+    // 모든 테스트가 기존 카트를 반환하거나 카트 조회 전에 실패하므로 트랜잭션 매니저는 호출되지 않는다.
+    private final PlatformTransactionManager transactionManager = mock(PlatformTransactionManager.class);
+    private final CartService service = new CartService(carts, items, productService, transactionManager);
 
     private Product onSaleProduct() {
         return new Product(10L, "사과", null, 1000, 5, null); // ON_SALE

@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.UUID;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -43,7 +44,7 @@ class ProductCatalogIT {
         String uniqueName = "특별사과-" + UUID.randomUUID();
 
         String created = mvc.perform(post("/api/seller/products")
-                        .with(user(String.valueOf(sellerUserId)).roles("SELLER"))
+                        .with(user(String.valueOf(sellerUserId)).roles("SELLER")).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"name":"%s","description":"신선","priceKrw":1500,"stock":5}
@@ -60,7 +61,7 @@ class ProductCatalogIT {
 
         // 판매중지 → 목록에서 사라짐
         mvc.perform(post("/api/seller/products/" + productId + "/status")
-                        .with(user(String.valueOf(sellerUserId)).roles("SELLER"))
+                        .with(user(String.valueOf(sellerUserId)).roles("SELLER")).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"status\":\"OFF_SALE\"}"))
                 .andExpect(status().isOk());
@@ -76,7 +77,7 @@ class ProductCatalogIT {
         long otherUserId = newSeller("other-" + UUID.randomUUID());
 
         String created = mvc.perform(post("/api/seller/products")
-                        .with(user(String.valueOf(ownerUserId)).roles("SELLER"))
+                        .with(user(String.valueOf(ownerUserId)).roles("SELLER")).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"내상품\",\"priceKrw\":1000,\"stock\":3}"))
                 .andExpect(status().isCreated())
@@ -85,7 +86,7 @@ class ProductCatalogIT {
 
         mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                         .put("/api/seller/products/" + productId)
-                        .with(user(String.valueOf(otherUserId)).roles("SELLER"))
+                        .with(user(String.valueOf(otherUserId)).roles("SELLER")).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"name\":\"탈취\",\"priceKrw\":1,\"imageUrl\":null}"))
                 .andExpect(status().isForbidden());

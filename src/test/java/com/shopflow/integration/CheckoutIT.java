@@ -18,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -47,14 +48,14 @@ class CheckoutIT {
     }
 
     private void addToCart(long buyerId, long productId, int qty) throws Exception {
-        mvc.perform(post("/api/cart/items").with(user(String.valueOf(buyerId)).roles("BUYER"))
+        mvc.perform(post("/api/cart/items").with(user(String.valueOf(buyerId)).roles("BUYER")).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"productId\":" + productId + ",\"quantity\":" + qty + "}"))
                 .andExpect(status().isCreated());
     }
 
     private org.springframework.test.web.servlet.ResultActions checkout(long buyerId, String key) throws Exception {
-        return mvc.perform(post("/api/checkout").with(user(String.valueOf(buyerId)).roles("BUYER"))
+        return mvc.perform(post("/api/checkout").with(user(String.valueOf(buyerId)).roles("BUYER")).with(csrf())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"recipient\":\"수령인\",\"address\":\"서울\",\"phone\":\"010\",\"idempotencyKey\":\"" + key + "\"}"));
     }

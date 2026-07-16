@@ -3,16 +3,18 @@ package com.shopflow.common.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 /**
- * 보안 설정 골격(원칙 II). 비밀번호는 BCrypt로 해시한다.
+ * 보안 설정(원칙 II). 비밀번호는 BCrypt로 해시한다.
  *
- * <p>US3(T023)에서 로그인 처리·인가 규칙을 완성한다. 이 단계에서는 공개 리소스와
- * 비밀번호 인코더만 정의하고, 나머지는 기본 보호(인증 필요)로 둔다.
+ * <p>세션 기반 인증을 쓰는 동안 CSRF는 쿠키 기반 토큰({@code XSRF-TOKEN} 쿠키 +
+ * {@code X-XSRF-TOKEN} 헤더)으로 강제한다. 프론트(별도 인스턴스, ADR-0011)가 쿠키에서 토큰을
+ * 읽어 헤더로 되돌려 보내는 표준 패턴이며, 세션 상태변경 엔드포인트(체크아웃·장바구니 등)를
+ * 보호한다.
  */
 @Configuration
 public class SecurityConfig {
@@ -40,8 +42,8 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(
                         new org.springframework.security.web.authentication.HttpStatusEntryPoint(
                                 org.springframework.http.HttpStatus.UNAUTHORIZED)))
-                // REST API는 상태 변경에 CSRF 토큰 필요. 개발 편의상 API 경로 CSRF는 T023에서 정책 확정.
-                .csrf(AbstractHttpConfigurer::disable); // TODO(T023): CSRF 정책 확정(세션 기반 재활성)
+                // 쿠키 기반 CSRF(HttpOnly=false로 프론트 JS가 읽어 X-XSRF-TOKEN 헤더로 재전송).
+                .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()));
 
         return http.build();
     }

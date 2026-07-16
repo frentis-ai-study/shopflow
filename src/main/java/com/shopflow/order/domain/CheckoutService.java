@@ -7,9 +7,11 @@ import com.shopflow.common.error.DomainException;
 import com.shopflow.delivery.domain.DeliveryService;
 import com.shopflow.inventory.domain.ReservationService;
 import com.shopflow.inventory.domain.StockReservation;
+import com.shopflow.common.domain.Money;
 import com.shopflow.order.domain.OrderService.LineSpec;
 import com.shopflow.order.domain.OrderService.PlacedOrder;
 import com.shopflow.order.domain.OrderService.SubOrderRef;
+import com.shopflow.order.repository.OrderRepository;
 import com.shopflow.payment.domain.IdempotencyStore;
 import com.shopflow.payment.domain.PaymentGateway.PaymentResult;
 import com.shopflow.payment.domain.PaymentService;
@@ -45,12 +47,13 @@ public class CheckoutService {
     private final PaymentIdempotencyRepository idempotencyRepo;
     private final OrderService orderService;
     private final DeliveryService deliveryService;
+    private final OrderRepository orderRepository;
 
     public CheckoutService(CartService cartService, ProductService productService,
                            SellerRepository sellers, ReservationService reservationService,
                            PaymentService paymentService, IdempotencyStore idempotencyStore,
                            PaymentIdempotencyRepository idempotencyRepo, OrderService orderService,
-                           DeliveryService deliveryService) {
+                           DeliveryService deliveryService, OrderRepository orderRepository) {
         this.cartService = cartService;
         this.productService = productService;
         this.sellers = sellers;
@@ -60,6 +63,7 @@ public class CheckoutService {
         this.idempotencyRepo = idempotencyRepo;
         this.orderService = orderService;
         this.deliveryService = deliveryService;
+        this.orderRepository = orderRepository;
     }
 
     @Transactional
@@ -69,7 +73,13 @@ public class CheckoutService {
         var prior = idempotencyRepo.findById(idempotencyKey);
         if (prior.isPresent()) {
             return switch (prior.get().getStatus()) {
-                case DONE -> new CheckoutResult(Result.EXISTING, prior.get().getOrderId(), 0, "이미 처리된 주문입니다");
+                case DONE -> {
+                    Long priorOrderId = prior.get().getOrderId();
+                    long priorTotal = orderRepository.findById(priorOrderId)
+                            .map(Order::getTotalKrw)
+                            .orElse(0L);
+                    yield new CheckoutResult(Result.EXISTING, priorOrderId, priorTotal, "이미 처리된 주문입니다");
+                }
                 case STARTED -> throw DomainException.conflict("결제가 이미 진행 중입니다");
                 case FAILED -> throw DomainException.conflict("이전 결제가 실패했습니다. 다시 시도해 주세요");
             };
@@ -82,7 +92,7 @@ public class CheckoutService {
 
         // 서버측 금액 계산·검증 + 라인 스펙(스냅샷) 구성 (FR-019)
         List<LineSpec> lines = new ArrayList<>();
-        long total = 0;
+        Money total = Money.ZERO;
         for (CartItem item : items) {
             Product product = productService.get(item.getProductId());
             if (product.getStatus() != ProductStatus.ON_SALE) {
@@ -95,9 +105,9 @@ public class CheckoutService {
             }
             lines.add(new LineSpec(product.getId(), seller.getId(), seller.getStoreName(),
                     product.getName(), product.getPriceKrw(), item.getQuantity()));
-            total += product.getPriceKrw() * item.getQuantity();
+            total = total.plus(Money.won(product.getPriceKrw()).times(item.getQuantity()));
         }
-        String requestHash = requestHash(buyerId, total, lines);
+        String requestHash = requestHash(buyerId, total.amountKrw(), lines);
 
         // 멱등 시작(독립 트랜잭션). 재요청은 기존 결과 반환(SC-004).
         IdempotencyStore.BeginResult begin;
@@ -109,7 +119,7 @@ public class CheckoutService {
         }
         switch (begin.outcome()) {
             case ALREADY_DONE -> {
-                return new CheckoutResult(Result.EXISTING, begin.orderId(), total, "이미 처리된 주문입니다");
+                return new CheckoutResult(Result.EXISTING, begin.orderId(), total.amountKrw(), "이미 처리된 주문입니다");
             }
             case IN_PROGRESS -> throw DomainException.conflict("결제가 이미 진행 중입니다");
             case PREVIOUSLY_FAILED -> throw DomainException.conflict("이전 결제가 실패했습니다. 다시 시도해 주세요");
@@ -117,7 +127,7 @@ public class CheckoutService {
         }
 
         try {
-            return doCheckout(buyerId, address, idempotencyKey, total, lines);
+            return doCheckout(buyerId, address, idempotencyKey, total.amountKrw(), lines);
         } catch (RuntimeException e) {
             idempotencyStore.markFailed(idempotencyKey);
             throw e;

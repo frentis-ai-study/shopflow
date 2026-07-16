@@ -10,6 +10,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.UUID;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -38,10 +39,10 @@ class AuthFlowIT {
                 {"email":"%s","password":"password123","displayName":"구매자"}
                 """.formatted(email);
 
-        mvc.perform(post("/api/signup").contentType(MediaType.APPLICATION_JSON).content(body))
+        mvc.perform(post("/api/signup").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isCreated());
 
-        mvc.perform(post("/api/signup").contentType(MediaType.APPLICATION_JSON).content(body))
+        mvc.perform(post("/api/signup").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isConflict());
     }
 
@@ -50,7 +51,7 @@ class AuthFlowIT {
         String body = """
                 {"email":"bad","password":"password123","displayName":"x"}
                 """;
-        mvc.perform(post("/api/signup").contentType(MediaType.APPLICATION_JSON).content(body))
+        mvc.perform(post("/api/signup").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isBadRequest());
     }
 
@@ -59,7 +60,7 @@ class AuthFlowIT {
         String body = """
                 {"sellerType":"INDIVIDUAL","storeName":"내 상점"}
                 """;
-        mvc.perform(post("/api/seller").contentType(MediaType.APPLICATION_JSON).content(body))
+        mvc.perform(post("/api/seller").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().is4xxClientError());
     }
 }

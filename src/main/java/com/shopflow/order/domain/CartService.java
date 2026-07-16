@@ -6,8 +6,11 @@ import com.shopflow.order.repository.CartRepository;
 import com.shopflow.product.domain.Product;
 import com.shopflow.product.domain.ProductStatus;
 import com.shopflow.product.domain.ProductService;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 
@@ -18,16 +21,36 @@ public class CartService {
     private final CartRepository carts;
     private final CartItemRepository items;
     private final ProductService productService;
+    private final TransactionTemplate newCartTransaction;
 
-    public CartService(CartRepository carts, CartItemRepository items, ProductService productService) {
+    public CartService(CartRepository carts, CartItemRepository items, ProductService productService,
+                       PlatformTransactionManager transactionManager) {
         this.carts = carts;
         this.items = items;
         this.productService = productService;
+        this.newCartTransaction = new TransactionTemplate(transactionManager);
+        this.newCartTransaction.setPropagationBehavior(
+                org.springframework.transaction.TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
 
-    @Transactional
     public Cart getOrCreateCart(Long buyerId) {
-        return carts.findByBuyerId(buyerId).orElseGet(() -> carts.save(new Cart(buyerId)));
+        return carts.findByBuyerId(buyerId).orElseGet(() -> createCart(buyerId));
+    }
+
+    /**
+     * 동시에 같은 구매자의 첫 장바구니 작업이 들어오면 둘 다 findByBuyerId에서 빈 값을 보고
+     * 각각 INSERT를 시도할 수 있다. {@code buyer_id} 유니크 제약 위반은 독립 트랜잭션
+     * (REQUIRES_NEW, 명시적 TransactionTemplate)에서만 롤백시키고, 상대가 커밋한 카트를
+     * 별도 트랜잭션에서 재조회한다. Postgres는 제약 위반 후 현재 트랜잭션이 abort 상태가 되므로
+     * 같은 트랜잭션에서 재조회하면 실패한다 — self-invocation(@Transactional 프록시 우회) 함정도
+     * 피하기 위해 TransactionTemplate으로 명시적으로 새 트랜잭션을 연다.
+     */
+    private Cart createCart(Long buyerId) {
+        try {
+            return newCartTransaction.execute(status -> carts.save(new Cart(buyerId)));
+        } catch (DataIntegrityViolationException concurrent) {
+            return carts.findByBuyerId(buyerId).orElseThrow(() -> concurrent);
+        }
     }
 
     /** 상품 담기(같은 상품이면 수량 누적, upsert). */

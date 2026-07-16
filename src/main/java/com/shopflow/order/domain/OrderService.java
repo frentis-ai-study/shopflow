@@ -1,6 +1,7 @@
 package com.shopflow.order.domain;
 
 import com.shopflow.common.domain.Address;
+import com.shopflow.common.domain.Money;
 import com.shopflow.order.repository.OrderLineRepository;
 import com.shopflow.order.repository.OrderRepository;
 import com.shopflow.order.repository.SubOrderRepository;
@@ -45,8 +46,8 @@ public class OrderService {
     /** 결제 시점 라인 스펙(스냅샷 값). */
     public record LineSpec(Long productId, Long sellerId, String sellerStoreName,
                            String productName, long unitPriceKrw, int quantity) {
-        long lineTotal() {
-            return unitPriceKrw * quantity;
+        Money lineTotal() {
+            return Money.won(unitPriceKrw).times(quantity);
         }
     }
 
@@ -60,8 +61,8 @@ public class OrderService {
     /** 결제 성공 시 주문·하위주문·라인 생성. */
     @Transactional
     public PlacedOrder place(Long buyerId, Address address, List<LineSpec> lines) {
-        long total = lines.stream().mapToLong(LineSpec::lineTotal).sum();
-        Order order = orders.save(new Order(buyerId, total, address, Instant.now(clock)));
+        Money total = sumLineTotals(lines);
+        Order order = orders.save(new Order(buyerId, total.amountKrw(), address, Instant.now(clock)));
 
         // 판매자별 그룹핑(입력 순서 보존)
         Map<Long, List<LineSpec>> bySeller = new LinkedHashMap<>();
@@ -72,16 +73,24 @@ public class OrderService {
         List<SubOrderRef> refs = new ArrayList<>();
         for (Map.Entry<Long, List<LineSpec>> entry : bySeller.entrySet()) {
             List<LineSpec> sellerLines = entry.getValue();
-            long subtotal = sellerLines.stream().mapToLong(LineSpec::lineTotal).sum();
+            Money subtotal = sumLineTotals(sellerLines);
             String storeName = sellerLines.get(0).sellerStoreName();
             SubOrder subOrder = subOrders.save(
-                    new SubOrder(order.getId(), entry.getKey(), storeName, subtotal));
+                    new SubOrder(order.getId(), entry.getKey(), storeName, subtotal.amountKrw()));
             for (LineSpec line : sellerLines) {
                 orderLines.save(new OrderLine(subOrder.getId(), line.productId(),
                         line.productName(), line.unitPriceKrw(), line.quantity()));
             }
             refs.add(new SubOrderRef(subOrder.getId(), entry.getKey()));
         }
-        return new PlacedOrder(order.getId(), total, refs);
+        return new PlacedOrder(order.getId(), total.amountKrw(), refs);
+    }
+
+    private static Money sumLineTotals(List<LineSpec> lines) {
+        Money sum = Money.ZERO;
+        for (LineSpec line : lines) {
+            sum = sum.plus(line.lineTotal());
+        }
+        return sum;
     }
 }
