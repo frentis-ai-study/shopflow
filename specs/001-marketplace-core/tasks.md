@@ -86,29 +86,29 @@ MVC는 후행) · PostgreSQL 16 · Flyway · Maven · JUnit 5 + Testcontainers
 **의존**: US3, US2.
 
 ### 테스트 (먼저 작성·실패 확인)
-- [ ] T032 [P] [US1] `test/unit/order/OrderSplitSnapshotTest.java` — 판매자별 분리·상품/판매자명 스냅샷·총액
-- [ ] T033 [P] [US1] `test/unit/payment/MockGatewayTest.java` — 승인/거절/멱등 규칙
-- [ ] T034 [P] [US1] `test/unit/cart/CartServiceTest.java` — 담기·수량·삭제·upsert 누적 (FR-014)
-- [ ] T035 [P] [US1] `test/integration/CheckoutHappyPathIT.java` — 주문 PAID·재고 확정 차감 + **서버측 금액 검증(FR-019, 클라이언트 금액 변조 거부)**
-- [ ] T036 [P] [US1] `test/integration/OversellConcurrencyIT.java` — 동시 결제 초과판매 0 (SC-003, CountDownLatch)
-- [ ] T037 [P] [US1] `test/integration/IdempotentRetryIT.java` — 동시·재시도 이중결제 0 (SC-004)
-- [ ] T038 [P] [US1] `test/integration/PaymentRejectRestoreIT.java` — 거절 시 재고 복원·주문 미생성
-- [ ] T039 [P] [US1] `test/integration/ReservationTtlSweepIT.java` — TTL 만료 복원 (SC-005, Clock 조작)
+- [X] T032 [P] [US1] `test/unit/order/OrderSplitSnapshotTest.java` — 판매자별 분리·상품/판매자명 스냅샷·총액
+- [X] T033 [P] [US1] `test/unit/payment/MockGatewayTest.java` — 승인/거절/멱등 규칙
+- [X] T034 [P] [US1] `test/unit/cart/CartServiceTest.java` — 담기·수량·삭제·upsert 누적 (FR-014)
+- [X] T035 [P] [US1] `test/integration/CheckoutHappyPathIT.java` — 주문 PAID·재고 확정 차감 + **서버측 금액 검증(FR-019, 클라이언트 금액 변조 거부)**
+- [X] T036 [P] [US1] `test/integration/OversellConcurrencyIT.java` — 동시 결제 초과판매 0 (SC-003, CountDownLatch)
+- [X] T037 [P] [US1] `test/integration/IdempotentRetryIT.java` — 동시·재시도 이중결제 0 (SC-004)
+- [X] T038 [P] [US1] `test/integration/PaymentRejectRestoreIT.java` — 거절 시 재고 복원·주문 미생성
+- [X] T039 [P] [US1] `test/integration/ReservationTtlSweepIT.java` — TTL 만료 복원 (SC-005, Clock 조작)
 
 ### 구현
-- [ ] T040 [P] [US1] `order/domain/Cart.java`, `CartItem.java`
-- [ ] T041 [US1] `order/domain/CartService.java` + `order/repository/CartRepository.java` (upsert 누적)
-- [ ] T042 [P] [US1] `inventory/domain/StockReservation.java`, `ReservationStatus.java`
-- [ ] T043 [US1] `inventory/domain/ReservationService.java` — 원자적 조건부 UPDATE 선점/확정/해제(상태 전이 `WHERE status=...` 원자화). **Product 재고 갱신은 네이티브 `@Modifying` 전용**(엔티티 @Version과 혼용 금지)
-- [ ] T044 [US1] `inventory/scheduler/ExpirySweeper.java` — `@Scheduled` TTL 해제(Clock 기반, 조건부 UPDATE)
-- [ ] T045 [P] [US1] `payment/domain/Payment.java`, `PaymentIdempotency.java`, `PaymentStatus.java`
-- [ ] T046 [US1] `payment/domain/PaymentGateway.java`(포트) + `payment/adapter/MockPaymentGateway.java`(지연·블로킹 테스트 훅 포함)
-- [ ] T047 [US1] `payment/domain/IdempotencyStore.java` + `PaymentService.java` — 멱등 상태기계(STARTED→DONE/FAILED, 경합 처리)
-- [ ] T048 [P] [US1] `order/domain/Order.java`, `SubOrder.java`, `OrderLine.java`, `OrderStatus.java`(판매자명 스냅샷 포함)
-- [ ] T049 [US1] `order/domain/OrderService.java` — 판매자별 분리·스냅샷·총액·상태 집계 + `OrderRepository`
-- [ ] T050 [US1] `delivery/domain/Delivery.java`, `DeliveryStatus.java` + 결제 완료 시 SubOrder마다 PENDING 생성
-- [ ] T051 [US1] `order/rest/CheckoutController.java` + `order/domain/CheckoutService.java` — 단일 트랜잭션 오케스트레이션(금액검증→멱등→선점→결제→주문/SubOrder→배송 생성). 판매자 ACTIVE 검사 포함
-- [ ] T052 [US1] `test/integration/` — [quickstart](./quickstart.md) S2 해피패스 e2e(API)
+- [X] T040 [P] [US1] `order/domain/Cart.java`, `CartItem.java`
+- [X] T041 [US1] `order/domain/CartService.java` + `order/repository/CartRepository.java` (upsert 누적)
+- [X] T042 [P] [US1] `inventory/domain/StockReservation.java`, `ReservationStatus.java`
+- [X] T043 [US1] `inventory/domain/ReservationService.java` — 원자적 조건부 UPDATE 선점/확정/해제(상태 전이 `WHERE status=...` 원자화). **Product 재고 갱신은 네이티브 `@Modifying` 전용**(엔티티 @Version과 혼용 금지)
+- [X] T044 [US1] `inventory/scheduler/ExpirySweeper.java` — `@Scheduled` TTL 해제(Clock 기반, 조건부 UPDATE)
+- [X] T045 [P] [US1] `payment/domain/Payment.java`, `PaymentIdempotency.java`, `PaymentStatus.java`
+- [X] T046 [US1] `payment/domain/PaymentGateway.java`(포트) + `payment/adapter/MockPaymentGateway.java`(지연·블로킹 테스트 훅 포함)
+- [X] T047 [US1] `payment/domain/IdempotencyStore.java` + `PaymentService.java` — 멱등 상태기계(STARTED→DONE/FAILED, 경합 처리)
+- [X] T048 [P] [US1] `order/domain/Order.java`, `SubOrder.java`, `OrderLine.java`, `OrderStatus.java`(판매자명 스냅샷 포함)
+- [X] T049 [US1] `order/domain/OrderService.java` — 판매자별 분리·스냅샷·총액·상태 집계 + `OrderRepository`
+- [X] T050 [US1] `delivery/domain/Delivery.java`, `DeliveryStatus.java` + 결제 완료 시 SubOrder마다 PENDING 생성
+- [X] T051 [US1] `order/rest/CheckoutController.java` + `order/domain/CheckoutService.java` — 단일 트랜잭션 오케스트레이션(금액검증→멱등→선점→결제→주문/SubOrder→배송 생성). 판매자 ACTIVE 검사 포함
+- [X] T052 [US1] `test/integration/` — [quickstart](./quickstart.md) S2 해피패스 e2e(API)
 
 **Checkpoint**: 백엔드 매출 루프 완성(화면 없이 API로 검증).
 
