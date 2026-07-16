@@ -48,7 +48,10 @@ public class SecurityConfig {
                         new org.springframework.security.web.authentication.HttpStatusEntryPoint(
                                 org.springframework.http.HttpStatus.UNAUTHORIZED)))
                 // 쿠키 기반 CSRF(HttpOnly=false로 프론트 JS가 읽어 X-XSRF-TOKEN 헤더로 재전송).
-                .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse()));
+                // /login·/api/signup은 아직 보호할 인증 세션이 없는 진입점이라 CSRF에서 제외한다
+                // (세션 이전 상태 — 실질적 위협 없음). 그 외 인증된 상태변경 API는 그대로 보호.
+                .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                        .ignoringRequestMatchers("/login", "/api/signup"));
 
         return http.build();
     }
