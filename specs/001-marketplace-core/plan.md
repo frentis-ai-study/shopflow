@@ -87,18 +87,18 @@ specs/001-marketplace-core/
 pom.xml                                 # Maven 빌드
 src/main/java/com/shopflow/
 ├── ShopFlowApplication.java
-├── account/          # 계정·인증 (User, 역할)
+├── account/          # 계정 컨텍스트 (User, Role)
 │   ├── domain/  web/  repository/
-├── catalog/          # 상품·판매자 (Product, Seller)
+├── product/          # 상품 컨텍스트 (Product, ProductStatus)
 │   ├── domain/  web/  repository/
-├── cart/             # 장바구니 (Cart, CartItem)
+├── order/            # 주문 컨텍스트 — 장바구니 포함 (Cart, CartItem, Order, SubOrder, OrderLine)
 │   ├── domain/  web/  repository/
-├── order/            # 주문·하위주문·상태 기계 (Order, SubOrder)
-│   ├── domain/  web/  repository/
-├── payment/          # 결제 어댑터·멱등 (PaymentGateway, MockPaymentGateway, Idempotency)
+├── payment/          # 결제 컨텍스트 (PaymentGateway, MockPaymentGateway, Idempotency)
 │   ├── domain/  adapter/  repository/
-├── inventory/        # 재고 선점·확정 차감·TTL 스윕 (StockReservation)
+├── inventory/        # 재고 컨텍스트 — 선점·확정·TTL 스윕 (StockReservation)
 │   ├── domain/  repository/  scheduler/
+├── delivery/         # 배송 컨텍스트 (Delivery, DeliveryStatus) — 판매자 배송 전이
+│   ├── domain/  web/  repository/
 └── common/           # 공통(금액 타입, 감사 로깅, 예외, 보안 설정)
 
 src/main/resources/
@@ -113,9 +113,10 @@ src/test/java/com/shopflow/
 └── web/              # 컨트롤러/보안 슬라이스 테스트
 ```
 
-**Structure Decision**: 단일 프로젝트 웹 애플리케이션(ADR-0001). 도메인별 패키지(account,
-catalog, cart, order, payment, inventory, common)로 나눠 계층(도메인/웹/리포지토리)을 각
-패키지 안에 둔다. 프론트/백 분리(Option 2)나 모바일(Option 3)은 채택하지 않는다.
+**Structure Decision**: 단일 프로젝트 웹 애플리케이션(ADR-0001). 바운디드 컨텍스트별 패키지
+(account, product, order[장바구니 포함], payment, inventory, delivery, common)로 나눠 계층
+(도메인/웹/리포지토리)을 각 패키지 안에 둔다. 배송은 정산(SubOrder)과 분리된 별도 컨텍스트
+(Delivery)로 둔다(ADR-0008). 프론트/백 분리(Option 2)나 모바일(Option 3)은 채택하지 않는다.
 
 ## Complexity Tracking
 

@@ -13,15 +13,20 @@
 User 1─* Product           (판매자 소유)
 User 1─1 Cart 1─* CartItem  (구매자 장바구니)
 User 1─* Order              (구매자 주문)
-Order 1─* SubOrder       (판매자별 하위주문)
+Order 1─* SubOrder       (판매자별 하위주문 = 정산 단위)
 SubOrder *─1 User(seller)
 SubOrder 1─* OrderLine   (스냅샷 라인)
+SubOrder 1─1 Delivery    (배송 이행 단위)
 Order 1─1 Payment
 Product 1─* StockReservation
 Payment 1─1 PaymentIdempotency(key)
 ```
 
 > User는 역할(구매자/판매자)을 복수 보유(FR-004). "판매자"는 상품·하위주문을 소유한 User.
+>
+> **바운디드 컨텍스트**: 계정 / 상품 / 주문(장바구니 포함) / 결제 / 재고 / 배송 / 공통.
+> SubOrder는 **주문 컨텍스트의 정산 단위**(판매자별 금액), 배송 상태·시각은 **배송 컨텍스트의
+> Delivery**가 담당한다(관심사 분리, ADR-0008).
 
 ---
 
@@ -90,10 +95,11 @@ Payment 1─1 PaymentIdempotency(key)
 | placedAt | Instant | 결제완료 시각 |
 
 - **OrderStatus**(enum, 집계): `PAID`, `PARTIALLY_SHIPPED`, `SHIPPED`, `COMPLETED`.
-  하위주문 상태들의 집계로 산출(R4). (예: 모든 하위주문이 DELIVERED → `COMPLETED`.)
+  하위주문에 연결된 Delivery 상태들의 집계로 산출(R4). (예: 모든 Delivery가 DELIVERED →
+  `COMPLETED`.)
 - 한 번의 결제 = 하나의 Order(멱등, R3).
 
-## SubOrder (하위주문 = 판매자별 하위 주문)
+## SubOrder (하위주문 = 판매자별 정산·주문 단위) — 주문 컨텍스트
 
 | 필드 | 타입 | 설명 |
 |---|---|---|
@@ -101,18 +107,31 @@ Payment 1─1 PaymentIdempotency(key)
 | orderId | Long (FK→Order) | 소속 주문 |
 | sellerId | Long (FK→User) | 담당 판매자 |
 | subtotalKrw | long | 이 판매자 분 소계(정수 원) — 향후 정산 기준 |
-| status | SubOrderStatus | 배송 상태 |
+
+- SubOrder는 **판매자별 금액·주문 단위**만 책임진다. 배송 상태·시각은 Delivery(배송 컨텍스트)가
+  담당한다(관심사 분리, ADR-0008).
+- 판매자별 조회·정산 기준(SC-006, FR-010/FR-021)은 SubOrder를 통한다.
+
+## Delivery (배송 이행 단위) — 배송 컨텍스트
+
+| 필드 | 타입 | 설명 |
+|---|---|---|
+| id | Long (PK) | 배송 식별자 |
+| subOrderId | Long (FK→SubOrder) | 대상 하위주문(1:1) |
+| status | DeliveryStatus | 배송 상태 |
 | shippedAt | Instant? | 배송중 전이 시각 |
 | deliveredAt | Instant? | 배송완료 시각(향후 정산 트리거) |
 
-- **SubOrderStatus**(enum): `PAID`(결제완료) → `SHIPPING`(배송중) → `DELIVERED`(배송완료).
+- **DeliveryStatus**(enum): `PENDING`(배송대기) → `SHIPPING`(배송중) → `DELIVERED`(배송완료).
+  결제 완료 시 각 SubOrder에 대해 `PENDING` Delivery가 생성된다.
 - **상태 전이 규칙**(R4, FR-011/FR-022):
-  - 허용: `PAID→SHIPPING`, `SHIPPING→DELIVERED`.
-  - 금지: 건너뛰기(`PAID→DELIVERED`), 역행(`SHIPPING→PAID` 등).
+  - 허용: `PENDING→SHIPPING`, `SHIPPING→DELIVERED`.
+  - 금지: 건너뛰기(`PENDING→DELIVERED`), 역행(`SHIPPING→PENDING` 등).
   - 각 전이는 감사 로그 기록(전이 주체·시각·이전/이후).
-  - 소유 판매자만 전이 가능(FR-009).
+  - 소유 판매자(SubOrder.sellerId)만 전이 가능(FR-009).
+- 향후 송장·추적번호·부분배송은 이 컨텍스트에서 확장한다.
 
-## OrderLine (주문 라인 — 상품 스냅샷)
+## OrderLine (주문 라인 — 상품 스냅샷) — 주문 컨텍스트
 
 | 필드 | 타입 | 설명 |
 |---|---|---|
@@ -182,6 +201,6 @@ Payment 1─1 PaymentIdempotency(key)
 
 1. `0 ≤ product.reserved ≤ product.stock` (초과 판매 불가, SC-003).
 2. 하나의 `idempotencyKey`는 최대 하나의 `Order`를 생성한다(SC-004).
-3. `SubOrder` 상태 전이는 허용 경로만(R4).
+3. `Delivery` 상태 전이는 허용 경로만(R4). `SubOrder`는 1:1 `Delivery`를 가진다.
 4. `OrderLine`의 단가·상품명은 결제 후 불변(FR-023).
 5. 금액 필드는 모두 정수 원, 음수 불가(R7).

@@ -22,6 +22,7 @@
 | [0005](./0005-per-seller-order-splitting.md) | 멀티셀러 주문을 판매자별 하위주문으로 분리 | 수용 | VII |
 | [0006](./0006-money-fixed-precision.md) | 금액은 고정소수점(정수 최소단위)으로 처리 | 수용 | III |
 | [0007](./0007-issue-branch-pr-workflow.md) | 이슈 → 브랜치 → PR 워크플로 강제 | 수용 | VIII |
+| [0008](./0008-delivery-bounded-context.md) | 배송을 별도 바운디드 컨텍스트(Delivery)로 분리 | 수용 | V, VII |
 
 ## 미결정 → 해소됨
 

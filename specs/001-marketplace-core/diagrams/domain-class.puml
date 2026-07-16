@@ -1,6 +1,7 @@
 @startuml domain-class-marketplace-core
 ' ShopFlow — 멀티셀러 핵심 커머스 도메인 클래스 다이어그램 (바운디드 컨텍스트)
 ' 근거: specs/001-marketplace-core/data-model.md, plan.md 패키지 구조
+' 컨텍스트: 계정 / 상품 / 주문(장바구니 포함) / 결제 / 재고 / 배송 / 공통
 
 title ShopFlow 도메인 클래스 다이어그램 — 바운디드 컨텍스트별 (멀티셀러 핵심 커머스)
 
@@ -40,8 +41,8 @@ package "계정 (Account)" <<Rectangle>> #EAF2FF {
   User *-- Role
 }
 
-' ===================== 카탈로그 컨텍스트 =====================
-package "카탈로그 (Catalog)" <<Rectangle>> #E6FCF5 {
+' ===================== 상품 컨텍스트 =====================
+package "상품 (Product)" <<Rectangle>> #E6FCF5 {
   class Product {
     +id : Long
     +sellerId : Long  <<ref: User>>
@@ -63,8 +64,8 @@ package "카탈로그 (Catalog)" <<Rectangle>> #E6FCF5 {
   Product ..> ProductStatus
 }
 
-' ===================== 장바구니 컨텍스트 =====================
-package "장바구니 (Cart)" <<Rectangle>> #FFF0F6 {
+' ===================== 주문 컨텍스트 (장바구니 포함) =====================
+package "주문 (Order) — 장바구니 포함" <<Rectangle>> #F3F0FF {
   class Cart {
     +id : Long
     +buyerId : Long  <<ref: User>>
@@ -75,11 +76,6 @@ package "장바구니 (Cart)" <<Rectangle>> #FFF0F6 {
     +productId : Long  <<ref: Product>>
     +quantity : int
   }
-  Cart "1" *-- "*" CartItem : 항목
-}
-
-' ===================== 주문 컨텍스트 =====================
-package "주문 (Order)" <<Rectangle>> #F3F0FF {
   class Order {
     +id : Long
     +buyerId : Long  <<ref: User>>
@@ -93,9 +89,7 @@ package "주문 (Order)" <<Rectangle>> #F3F0FF {
     +orderId : Long
     +sellerId : Long  <<ref: User>>
     +subtotalKrw : long
-    +status : SubOrderStatus
-    +shippedAt : Instant
-    +deliveredAt : Instant
+    .. 정산·주문 단위 (배송상태 없음) ..
   }
   class OrderLine {
     +id : Long
@@ -116,16 +110,11 @@ package "주문 (Order)" <<Rectangle>> #F3F0FF {
     SHIPPED
     COMPLETED
   }
-  enum SubOrderStatus {
-    PAID
-    SHIPPING
-    DELIVERED
-  }
+  Cart "1" *-- "*" CartItem : 항목
   Order "1" *-- "*" SubOrder : 하위주문
   SubOrder "1" *-- "*" OrderLine : 라인(스냅샷)
   Order *-- Address
   Order ..> OrderStatus
-  SubOrder ..> SubOrderStatus
 }
 
 ' ===================== 결제 컨텍스트 =====================
@@ -173,6 +162,23 @@ package "재고 (Inventory)" <<Rectangle>> #FFF9DB {
   StockReservation ..> ReservationStatus
 }
 
+' ===================== 배송 컨텍스트 =====================
+package "배송 (Delivery)" <<Rectangle>> #E7F5FF {
+  class Delivery {
+    +id : Long
+    +subOrderId : Long  <<ref: SubOrder>>
+    +status : DeliveryStatus
+    +shippedAt : Instant
+    +deliveredAt : Instant
+  }
+  enum DeliveryStatus {
+    PENDING
+    SHIPPING
+    DELIVERED
+  }
+  Delivery ..> DeliveryStatus
+}
+
 ' ===================== 공통 =====================
 package "공통 (Common)" <<Rectangle>> #F1F3F5 {
   class Money <<value>> {
@@ -193,6 +199,7 @@ Product "1" <.. "*" OrderLine : «ref» (스냅샷)
 Product "1" <.. "*" StockReservation : «ref»
 User "1" <.. "*" StockReservation : «ref» 구매자
 Order "1" <.. "1" Payment : «ref»
+SubOrder "1" <.. "1" Delivery : «ref» 1:1
 
 note bottom of Product
   불변식: 0 ≤ reserved ≤ stock (초과 판매 0)
@@ -202,6 +209,12 @@ end note
 note bottom of OrderLine
   결제 시점 단가·상품명 스냅샷 →
   이후 상품 변경이 주문에 영향 없음 (FR-023)
+end note
+
+note bottom of Delivery
+  결제 완료 시 SubOrder마다 PENDING 생성.
+  판매자가 SHIPPING→DELIVERED 전이(FR-011).
+  향후 송장·추적·부분배송 확장 지점.
 end note
 
 note top of Money
