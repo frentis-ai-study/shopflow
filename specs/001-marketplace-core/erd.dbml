@@ -208,7 +208,7 @@ Table deliveries {
 }
 
 // ===================== 관계 =====================
-// --- 같은 컨텍스트 내 (실제 외래키) ---
+// --- 같은 컨텍스트 내부 관계만 실제 외래키(Ref)로 둔다 ---
 Ref: user_roles.user_id > users.id
 Ref: sellers.user_id > users.id                 // 1:1 (user_id UNIQUE)
 Ref: cart_items.cart_id > carts.id
@@ -216,17 +216,19 @@ Ref: sub_orders.order_id > orders.id
 Ref: order_lines.sub_order_id > sub_orders.id
 Ref: payments.idempotency_key > payment_idempotency.key
 
-// --- 컨텍스트 경계를 넘는 논리적 참조 (분리 시 물리 FK 아님) ---
-Ref: products.seller_id > sellers.id            // 상품 → 계정
-Ref: carts.buyer_id > users.id                  // 주문 → 계정 (buyer_id UNIQUE)
-Ref: orders.buyer_id > users.id                 // 주문 → 계정
-Ref: sub_orders.seller_id > sellers.id          // 주문 → 계정
-Ref: cart_items.product_id > products.id        // 주문 → 상품
-Ref: order_lines.product_id > products.id       // 주문 → 상품
-Ref: payments.order_id > orders.id              // 결제 → 주문
-Ref: stock_reservations.product_id > products.id // 재고 → 상품
-Ref: stock_reservations.buyer_id > users.id     // 재고 → 계정
-Ref: deliveries.sub_order_id > sub_orders.id    // 배송 → 주문 (1:1, sub_order_id UNIQUE)
+// --- 컨텍스트 경계를 넘는 참조는 물리 FK로 두지 않는다 (ADR-0010) ---
+// 아래는 "논리적 참조"이며 애플리케이션에서 정합성을 보장한다. 각 컬럼의 note에도
+// [cross-context] 로 표기되어 있다. (DDL에 FK 제약을 만들지 않기 위해 Ref로 선언하지 않음)
+//   products.seller_id            -> sellers.id        (상품 → 계정)
+//   carts.buyer_id                -> users.id          (주문 → 계정)
+//   orders.buyer_id               -> users.id          (주문 → 계정)
+//   sub_orders.seller_id          -> sellers.id        (주문 → 계정)
+//   cart_items.product_id         -> products.id       (주문 → 상품)
+//   order_lines.product_id        -> products.id       (주문 → 상품)
+//   payments.order_id             -> orders.id         (결제 → 주문)
+//   stock_reservations.product_id -> products.id       (재고 → 상품)
+//   stock_reservations.buyer_id   -> users.id          (재고 → 계정)
+//   deliveries.sub_order_id       -> sub_orders.id     (배송 → 주문, 1:1)
 
 // ===================== 컨텍스트 그룹 =====================
 TableGroup "계정 (Account)" {

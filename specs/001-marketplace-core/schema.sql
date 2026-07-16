@@ -1,6 +1,6 @@
 -- SQL dump generated using DBML (dbml.dbdiagram.io)
 -- Database: PostgreSQL
--- Generated at: 2026-07-16T04:41:41.200Z
+-- Generated at: 2026-07-16T04:46:11.353Z
 
 CREATE TYPE "role" AS ENUM (
   'BUYER',
@@ -267,23 +267,3 @@ ALTER TABLE "sub_orders" ADD FOREIGN KEY ("order_id") REFERENCES "orders" ("id")
 ALTER TABLE "order_lines" ADD FOREIGN KEY ("sub_order_id") REFERENCES "sub_orders" ("id") DEFERRABLE INITIALLY IMMEDIATE;
 
 ALTER TABLE "payments" ADD FOREIGN KEY ("idempotency_key") REFERENCES "payment_idempotency" ("key") DEFERRABLE INITIALLY IMMEDIATE;
-
-ALTER TABLE "products" ADD FOREIGN KEY ("seller_id") REFERENCES "sellers" ("id") DEFERRABLE INITIALLY IMMEDIATE;
-
-ALTER TABLE "carts" ADD FOREIGN KEY ("buyer_id") REFERENCES "users" ("id") DEFERRABLE INITIALLY IMMEDIATE;
-
-ALTER TABLE "orders" ADD FOREIGN KEY ("buyer_id") REFERENCES "users" ("id") DEFERRABLE INITIALLY IMMEDIATE;
-
-ALTER TABLE "sub_orders" ADD FOREIGN KEY ("seller_id") REFERENCES "sellers" ("id") DEFERRABLE INITIALLY IMMEDIATE;
-
-ALTER TABLE "cart_items" ADD FOREIGN KEY ("product_id") REFERENCES "products" ("id") DEFERRABLE INITIALLY IMMEDIATE;
-
-ALTER TABLE "order_lines" ADD FOREIGN KEY ("product_id") REFERENCES "products" ("id") DEFERRABLE INITIALLY IMMEDIATE;
-
-ALTER TABLE "payments" ADD FOREIGN KEY ("order_id") REFERENCES "orders" ("id") DEFERRABLE INITIALLY IMMEDIATE;
-
-ALTER TABLE "stock_reservations" ADD FOREIGN KEY ("product_id") REFERENCES "products" ("id") DEFERRABLE INITIALLY IMMEDIATE;
-
-ALTER TABLE "stock_reservations" ADD FOREIGN KEY ("buyer_id") REFERENCES "users" ("id") DEFERRABLE INITIALLY IMMEDIATE;
-
-ALTER TABLE "deliveries" ADD FOREIGN KEY ("sub_order_id") REFERENCES "sub_orders" ("id") DEFERRABLE INITIALLY IMMEDIATE;
