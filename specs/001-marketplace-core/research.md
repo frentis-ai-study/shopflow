@@ -96,6 +96,16 @@
   Maven은 Spring Boot 표준 구성이 잘 알려져 있고 `pom.xml` 선언이 명시적이다.
 - **검토한 대안**: Gradle도 가능하나 사용자 요청에 따라 Maven 채택. 수기 DDL 대신 Flyway로 이력화.
 
+## R8b. 전달 계층 (REST 리포지토리 백엔드 + 프론트 제어 MVC)
+
+- **결정**: 백엔드는 **Spring Data REST**(`@RepositoryRestResource`)로 애그리거트 CRUD를 REST
+  리소스로 노출하고, 도메인 연산(체크아웃·배송 전이·판매상태 전환·재고 선점)은 커스텀 REST
+  컨트롤러 + 애플리케이션 서비스로 제공한다. 화면·폼·세션은 별도 **프론트 제어 MVC**(Spring
+  MVC + Thymeleaf, BFF)가 담당하고 백엔드 REST를 호출한다([ADR-0011](../../docs/adr/0011-rest-repository-backend-and-frontend-mvc.md)).
+- **근거**: CRUD 표준화·프론트 분리·서비스 추출 용이. 무결성이 필요한 변경은 커스텀 컨트롤러
+  +서비스로 제한(원칙 II·III).
+- **주의**: Spring Data REST 자동 노출 범위·쓰기 권한을 프로젝션/정책으로 제한한다.
+
 ## R9. 아키텍처 경계 (추출 가능한 모듈러 모놀리스)
 
 - **결정**: 컨텍스트별 패키지·스키마·ID 참조·명시적 인터페이스로 짠 **추출 가능한 모듈러

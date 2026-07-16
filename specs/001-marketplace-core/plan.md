@@ -17,8 +17,9 @@
 
 **Language/Version**: Java 21 (LTS)
 
-**Primary Dependencies**: Spring Boot 3.3.x — Spring MVC, Spring Data JPA, Spring Security,
-Thymeleaf, Bean Validation(Hibernate Validator), Flyway(마이그레이션)
+**Primary Dependencies**: Spring Boot 3.3.x — Spring Data REST(백엔드 REST 리포지토리 +
+커스텀 REST 컨트롤러), Spring Data JPA, Spring MVC + Thymeleaf(프론트 제어 레이어), Spring
+Security, Bean Validation(Hibernate Validator), Flyway(마이그레이션). 전달 계층 구성은 ADR-0011.
 
 **Storage**: PostgreSQL 16 (관계형, 헌장 원칙 III). 로컬 포트는 `POSTGRES_PORT`(기본 슬롯
 0 → 15432) 환경변수 사용.
@@ -83,25 +84,24 @@ specs/001-marketplace-core/
 
 ### 소스 코드 (저장소 루트)
 
-단일 Spring Boot 프로젝트(모놀리스). 도메인 중심 패키지 구조.
+단일 Spring Boot 프로젝트(모듈러 모놀리스). 전달 계층은 프론트 제어 MVC 모듈과 백엔드 REST
+모듈로 분리(ADR-0011). 백엔드 각 컨텍스트는 `rest`(Spring Data REST 리포지토리 + 커스텀 REST
+컨트롤러)·`domain`·`repository` 로 구성.
 
 ```text
 pom.xml                                 # Maven 빌드
 src/main/java/com/shopflow/
 ├── ShopFlowApplication.java
-├── account/          # 계정 컨텍스트 (User, Role, Seller, SellerType, SellerStatus)
-│   ├── domain/  web/  repository/
-├── product/          # 상품 컨텍스트 (Product, ProductStatus)
-│   ├── domain/  web/  repository/
-├── order/            # 주문 컨텍스트 — 장바구니 포함 (Cart, CartItem, Order, SubOrder, OrderLine)
-│   ├── domain/  web/  repository/
-├── payment/          # 결제 컨텍스트 (PaymentGateway, MockPaymentGateway, Idempotency)
-│   ├── domain/  adapter/  repository/
-├── inventory/        # 재고 컨텍스트 — 선점·확정·TTL 스윕 (StockReservation)
-│   ├── domain/  repository/  scheduler/
-├── delivery/         # 배송 컨텍스트 (Delivery, DeliveryStatus) — 판매자 배송 전이
-│   ├── domain/  web/  repository/
+├── webmvc/           # 프론트 제어 MVC (PageControllers, RestApiClient, Thymeleaf) — BFF
+│   ├── page/  client/
+├── account/          # 계정 (User, Role, Seller) — rest/domain/repository
+├── product/          # 상품 (Product, ProductStatus, ProductOpsController)
+├── order/            # 주문 — 장바구니 포함 (Cart, Order, SubOrder, OrderLine, CheckoutController)
+├── payment/          # 결제 (PaymentService, PaymentGateway, MockPaymentGateway, Idempotency)
+├── inventory/        # 재고 (StockReservation, ReservationService, ExpirySweeper)
+├── delivery/         # 배송 (Delivery, DeliveryStatus, DeliveryOpsController)
 └── common/           # 공통(금액 타입, 감사 로깅, 예외, 보안 설정)
+   # 각 컨텍스트 패키지: rest/(RepositoryRestResource + 커스텀 REST) · domain/ · repository/
 
 src/main/resources/
 ├── templates/        # Thymeleaf 뷰 (한글)

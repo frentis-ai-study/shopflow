@@ -1,6 +1,6 @@
 # ADR-0001: 서버사이드 렌더링(Spring Boot + Thymeleaf) 채택
 
-- **상태**: 수용(Accepted) — 배포·프론트 분리 측면은 [ADR-0010](./0010-extraction-ready-modular-monolith.md)이 보완
+- **상태**: 수용(Accepted) — 배포·프론트 분리는 [ADR-0010](./0010-extraction-ready-modular-monolith.md), 전달 계층(REST 백엔드 + 프론트 제어 MVC)은 [ADR-0011](./0011-rest-repository-backend-and-frontend-mvc.md)이 보완/대체
 - **날짜**: 2026-07-16
 - **관련**: 헌장 원칙 V(단순성·계층형 아키텍처), 기술·보안 제약
 
