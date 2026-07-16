@@ -1,195 +1,198 @@
 @startuml domain-class-marketplace-core
-' ShopFlow — 멀티셀러 핵심 커머스 도메인 클래스 다이어그램
-' 근거: specs/001-marketplace-core/data-model.md
+' ShopFlow — 멀티셀러 핵심 커머스 도메인 클래스 다이어그램 (바운디드 컨텍스트)
+' 근거: specs/001-marketplace-core/data-model.md, plan.md 패키지 구조
 
-title ShopFlow 도메인 클래스 다이어그램 — 멀티셀러 핵심 커머스
+title ShopFlow 도메인 클래스 다이어그램 — 바운디드 컨텍스트별 (멀티셀러 핵심 커머스)
 
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam defaultFontName "Apple SD Gothic Neo"
 skinparam classFontStyle bold
+skinparam packageStyle rectangle
 skinparam class {
-  BackgroundColor #F5F7FF
+  BackgroundColor #FFFFFF
   BorderColor #3B5BDB
-  ArrowColor #495057
   AttributeFontColor #212529
 }
 skinparam enumBackgroundColor #FFF9DB
 skinparam enumBorderColor #F08C00
+skinparam ArrowColor #495057
 
-' ===================== 엔티티 =====================
+legend top left
+  실선 화살표 = 같은 컨텍스트 내 관계 / 합성
+  점선 «ref»  = 컨텍스트 경계를 넘는 ID 참조 (느슨한 결합)
+endlegend
 
-class User {
-  +id : Long
-  +email : String <<unique>>
-  +passwordHash : String
-  +displayName : String
-  +roles : Set<Role>
-  +createdAt : Instant
+' ===================== 계정 컨텍스트 =====================
+package "계정 (Account)" <<Rectangle>> #EAF2FF {
+  class User {
+    +id : Long
+    +email : String <<unique>>
+    +passwordHash : String
+    +displayName : String
+    +roles : Set<Role>
+    +createdAt : Instant
+  }
+  enum Role {
+    BUYER
+    SELLER
+  }
+  User *-- Role
 }
 
-class Product {
-  +id : Long
-  +sellerId : Long
-  +name : String
-  +description : String
-  +priceKrw : long
-  +stock : int
-  +reserved : int
-  +imageUrl : String
-  +status : ProductStatus
-  +version : long
-  --
-  availableStock() : int  ' stock - reserved
+' ===================== 카탈로그 컨텍스트 =====================
+package "카탈로그 (Catalog)" <<Rectangle>> #E6FCF5 {
+  class Product {
+    +id : Long
+    +sellerId : Long  <<ref: User>>
+    +name : String
+    +description : String
+    +priceKrw : long
+    +stock : int
+    +reserved : int
+    +imageUrl : String
+    +status : ProductStatus
+    +version : long
+    --
+    availableStock() : int  ' stock - reserved
+  }
+  enum ProductStatus {
+    ON_SALE
+    OFF_SALE
+  }
+  Product ..> ProductStatus
 }
 
-class Cart {
-  +id : Long
-  +buyerId : Long
+' ===================== 장바구니 컨텍스트 =====================
+package "장바구니 (Cart)" <<Rectangle>> #FFF0F6 {
+  class Cart {
+    +id : Long
+    +buyerId : Long  <<ref: User>>
+  }
+  class CartItem {
+    +id : Long
+    +cartId : Long
+    +productId : Long  <<ref: Product>>
+    +quantity : int
+  }
+  Cart "1" *-- "*" CartItem : 항목
 }
 
-class CartItem {
-  +id : Long
-  +cartId : Long
-  +productId : Long
-  +quantity : int
+' ===================== 주문 컨텍스트 =====================
+package "주문 (Order)" <<Rectangle>> #F3F0FF {
+  class Order {
+    +id : Long
+    +buyerId : Long  <<ref: User>>
+    +totalKrw : long
+    +shippingAddress : Address
+    +status : OrderStatus
+    +placedAt : Instant
+  }
+  class SubOrder {
+    +id : Long
+    +orderId : Long
+    +sellerId : Long  <<ref: User>>
+    +subtotalKrw : long
+    +status : SubOrderStatus
+    +shippedAt : Instant
+    +deliveredAt : Instant
+  }
+  class OrderLine {
+    +id : Long
+    +subOrderId : Long
+    +productId : Long  <<ref: Product>>
+    +productNameSnapshot : String
+    +unitPriceKrwSnapshot : long
+    +quantity : int
+  }
+  class Address <<value>> {
+    +recipient : String
+    +address : String
+    +phone : String
+  }
+  enum OrderStatus {
+    PAID
+    PARTIALLY_SHIPPED
+    SHIPPED
+    COMPLETED
+  }
+  enum SubOrderStatus {
+    PAID
+    SHIPPING
+    DELIVERED
+  }
+  Order "1" *-- "*" SubOrder : 하위주문
+  SubOrder "1" *-- "*" OrderLine : 라인(스냅샷)
+  Order *-- Address
+  Order ..> OrderStatus
+  SubOrder ..> SubOrderStatus
 }
 
-class Order {
-  +id : Long
-  +buyerId : Long
-  +totalKrw : long
-  +shippingAddress : Address
-  +status : OrderStatus
-  +placedAt : Instant
+' ===================== 결제 컨텍스트 =====================
+package "결제 (Payment)" <<Rectangle>> #FFF4E6 {
+  class Payment {
+    +id : Long
+    +orderId : Long  <<ref: Order>>
+    +idempotencyKey : String <<unique>>
+    +amountKrw : long
+    +status : PaymentStatus
+    +gatewayRef : String
+    +createdAt : Instant
+  }
+  class PaymentIdempotency {
+    +key : String <<pk>>
+    +requestHash : String
+    +status : String
+    +orderId : Long
+    +createdAt : Instant
+  }
+  enum PaymentStatus {
+    APPROVED
+    REJECTED
+  }
+  Payment "1" --> "1" PaymentIdempotency : 멱등키 >
+  Payment ..> PaymentStatus
 }
 
-class SubOrder {
-  +id : Long
-  +orderId : Long
-  +sellerId : Long
-  +subtotalKrw : long
-  +status : SubOrderStatus
-  +shippedAt : Instant
-  +deliveredAt : Instant
+' ===================== 재고 컨텍스트 =====================
+package "재고 (Inventory)" <<Rectangle>> #FFF9DB {
+  class StockReservation {
+    +id : Long
+    +productId : Long  <<ref: Product>>
+    +buyerId : Long  <<ref: User>>
+    +quantity : int
+    +status : ReservationStatus
+    +expiresAt : Instant
+    +createdAt : Instant
+  }
+  enum ReservationStatus {
+    HELD
+    CONFIRMED
+    RELEASED
+  }
+  StockReservation ..> ReservationStatus
 }
 
-class OrderLine {
-  +id : Long
-  +subOrderId : Long
-  +productId : Long
-  +productNameSnapshot : String
-  +unitPriceKrwSnapshot : long
-  +quantity : int
+' ===================== 공통 =====================
+package "공통 (Common)" <<Rectangle>> #F1F3F5 {
+  class Money <<value>> {
+    +amountKrw : long
+    --
+    plus(Money) : Money
+    times(int) : Money
+  }
 }
 
-class Payment {
-  +id : Long
-  +orderId : Long
-  +idempotencyKey : String <<unique>>
-  +amountKrw : long
-  +status : PaymentStatus
-  +gatewayRef : String
-  +createdAt : Instant
-}
-
-class PaymentIdempotency {
-  +key : String <<pk>>
-  +requestHash : String
-  +status : String
-  +orderId : Long
-  +createdAt : Instant
-}
-
-class StockReservation {
-  +id : Long
-  +productId : Long
-  +buyerId : Long
-  +quantity : int
-  +status : ReservationStatus
-  +expiresAt : Instant
-  +createdAt : Instant
-}
-
-' ===================== 값 객체 =====================
-
-class Address <<value>> {
-  +recipient : String
-  +address : String
-  +phone : String
-}
-
-class Money <<value>> {
-  +amountKrw : long
-  --
-  plus(Money) : Money
-  times(int) : Money
-}
-
-' ===================== 열거형 =====================
-
-enum Role {
-  BUYER
-  SELLER
-}
-
-enum ProductStatus {
-  ON_SALE
-  OFF_SALE
-}
-
-enum OrderStatus {
-  PAID
-  PARTIALLY_SHIPPED
-  SHIPPED
-  COMPLETED
-}
-
-enum SubOrderStatus {
-  PAID
-  SHIPPING
-  DELIVERED
-}
-
-enum PaymentStatus {
-  APPROVED
-  REJECTED
-}
-
-enum ReservationStatus {
-  HELD
-  CONFIRMED
-  RELEASED
-}
-
-' ===================== 관계 =====================
-
-User "1" --> "*" Product : 판매(소유) >
-User "1" --> "1" Cart : 소유 >
-Cart "1" *-- "*" CartItem : 항목
-CartItem "*" --> "1" Product : 참조 >
-
-User "1" --> "*" Order : 구매 >
-Order "1" *-- "*" SubOrder : 하위주문
-SubOrder "*" --> "1" User : 담당 판매자 >
-SubOrder "1" *-- "*" OrderLine : 라인(스냅샷)
-OrderLine "*" --> "1" Product : 참조 >
-
-Order "1" --> "1" Payment : 결제
-Payment "1" --> "1" PaymentIdempotency : 멱등키 >
-
-Product "1" --> "*" StockReservation : 선점
-StockReservation "*" --> "1" User : 선점 구매자 >
-
-' 값객체·enum 연결(대표)
-Order *-- Address
-User *-- Role
-Product ..> ProductStatus
-Order ..> OrderStatus
-SubOrder ..> SubOrderStatus
-Payment ..> PaymentStatus
-StockReservation ..> ReservationStatus
-Money ..> Product : 금액 표현
+' ============ 컨텍스트 경계를 넘는 ID 참조 (느슨한 결합) ============
+User "1" <.. "*" Product : «ref» 판매자
+User "1" <.. "1" Cart : «ref» 구매자
+User "1" <.. "*" Order : «ref» 구매자
+User "1" <.. "*" SubOrder : «ref» 담당 판매자
+Product "1" <.. "*" CartItem : «ref»
+Product "1" <.. "*" OrderLine : «ref» (스냅샷)
+Product "1" <.. "*" StockReservation : «ref»
+User "1" <.. "*" StockReservation : «ref» 구매자
+Order "1" <.. "1" Payment : «ref»
 
 note bottom of Product
   불변식: 0 ≤ reserved ≤ stock (초과 판매 0)
@@ -199,6 +202,11 @@ end note
 note bottom of OrderLine
   결제 시점 단가·상품명 스냅샷 →
   이후 상품 변경이 주문에 영향 없음 (FR-023)
+end note
+
+note top of Money
+  금액 값객체 — 모든 컨텍스트의
+  금액 필드(priceKrw/totalKrw/…)에 적용
 end note
 
 @enduml
