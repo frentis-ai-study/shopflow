@@ -23,7 +23,8 @@
 | [0006](./0006-money-fixed-precision.md) | 금액은 고정소수점(정수 최소단위)으로 처리 | 수용 | III |
 | [0007](./0007-issue-branch-pr-workflow.md) | 이슈 → 브랜치 → PR 워크플로 강제 | 수용 | VIII |
 
-## 미결정(후속 ADR 예정)
+## 미결정 → 해소됨
 
-- **동시성 제어 방식**(낙관적 vs 비관적 락) — 재고 선점 구현 시 `/speckit-plan`에서 확정 예정.
-  ADR-0004의 후속으로 기록한다.
+- **동시성 제어 방식**(낙관적 vs 비관적 락) — ✅ 해소됨. `/speckit-plan`의
+  [research.md](../../specs/001-marketplace-core/research.md) **R1**에서 **원자적 조건부
+  UPDATE**(행 잠금 암묵)로 확정. ADR-0004의 세부 후속 결정으로 research에 기록.
