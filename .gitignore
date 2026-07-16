@@ -1,0 +1,54 @@
+# ===== Java / Spring Boot =====
+target/
+build/
+!**/src/main/**/target/
+!**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+hs_err_pid*
+replay_pid*
+
+# ===== Gradle =====
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+!gradle-wrapper.properties
+
+# ===== Maven =====
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# ===== IDE =====
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.project
+.classpath
+*.swp
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== 환경/시크릿 (원칙 II: 시크릿은 커밋 금지) =====
+.env
+.env.*
+!.env.example
+*.local
+application-local.yml
+application-local.properties
+application-secret*.yml
+application-secret*.properties
+
+# ===== 빌드/의존성 =====
+node_modules/
+dist/
+out/
