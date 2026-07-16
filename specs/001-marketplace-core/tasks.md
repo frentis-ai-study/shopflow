@@ -70,13 +70,13 @@ MVC는 후행) · PostgreSQL 16 · Flyway · Maven · JUnit 5 + Testcontainers
 
 **목표**: 상품 등록·수정·판매상태 전환, 판매중 상품 조회 API. **의존**: US3.
 
-- [ ] T025 [P] [US2] `test/unit/product/ProductServiceTest.java` — 등록·수정 검증, 가격·재고 음수 불가
-- [ ] T026 [P] [US2] `test/web/product/ProductRestTest.java` — REST 조회 노출·소유권 403(쓰기는 커스텀 경유)
-- [ ] T027 [P] [US2] `product/domain/Product.java`, `ProductStatus.java`
-- [ ] T028 [US2] `product/repository/ProductRepository.java` (RestRepository 조회, 판매중 검색 쿼리)
-- [ ] T029 [US2] `product/domain/ProductService.java` — 등록·수정 규칙, 소유권, `stock>=reserved` 하향 가드
-- [ ] T030 [US2] `product/rest/ProductController.java` — 상품 생성/수정/판매상태 전환(커스텀 REST, 소유권 인가)
-- [ ] T031 [US2] `test/integration/ProductCatalogIT.java` — 등록→조회 노출, 판매중지 미노출, 타 판매자 차단
+- [X] T025 [P] [US2] `test/unit/product/ProductServiceTest.java` — 등록·수정 검증, 가격·재고 음수 불가
+- [X] T026 [P] [US2] `test/web/product/ProductRestTest.java` — REST 조회 노출·소유권 403(쓰기는 커스텀 경유)
+- [X] T027 [P] [US2] `product/domain/Product.java`, `ProductStatus.java`
+- [X] T028 [US2] `product/repository/ProductRepository.java` (RestRepository 조회, 판매중 검색 쿼리)
+- [X] T029 [US2] `product/domain/ProductService.java` — 등록·수정 규칙, 소유권, `stock>=reserved` 하향 가드
+- [X] T030 [US2] `product/rest/ProductController.java` — 상품 생성/수정/판매상태 전환(커스텀 REST, 소유권 인가)
+- [X] T031 [US2] `test/integration/ProductCatalogIT.java` — 등록→조회 노출, 판매중지 미노출, 타 판매자 차단
 
 ---
 
