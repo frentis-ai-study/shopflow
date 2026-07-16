@@ -38,11 +38,28 @@
 개발은 [Spec Kit](https://github.com/github/spec-kit) 워크플로로 진행한다:
 `헌장(constitution) → 사양(specify) → 계획(plan) → 태스크(tasks) → 구현(implement)`
 
-## 로컬 실행
+## 로컬 실행 (백엔드)
 
-> 애플리케이션 코드는 아직 구성 전이다. 스캐폴딩 후 실행 방법을 이 절에 추가한다.
+포트·DB·시크릿 등 환경별 값은 환경변수로 외부화하며 소스에 하드코딩하지 않는다(dev-ports).
 
-포트·DB·시크릿 등 환경별 값은 환경변수로 외부화하며 소스에 하드코딩하지 않는다.
+```bash
+# 0) 포트 슬롯/환경변수 셋업 (최초 1회)
+dev-init                                   # .envrc(use_dev_ports) + direnv allow
+direnv exec . env | grep -E 'BACKEND_PORT|POSTGRES_PORT'
+
+# 1) PostgreSQL 기동
+direnv exec . docker compose up -d postgres
+
+# 2) 백엔드 실행 (Maven Wrapper). mvnw 없으면: mvn -N wrapper:wrapper
+direnv exec . ./mvnw spring-boot:run       # http://localhost:${BACKEND_PORT:-18000}
+
+# 3) 테스트 (Testcontainers가 PostgreSQL 자동 기동 — Docker 필요)
+direnv exec . ./mvnw test
+```
+
+- 백엔드 REST 리소스는 `/api` 하위(ADR-0011). 프론트엔드는 외부 디자인 완료 후 별도 인스턴스로
+  이 REST를 소비한다(ADR-0010 v2).
+- 스키마는 Flyway(`src/main/resources/db/migration`)로 관리하며, JPA는 `ddl-auto=validate`.
 
 ## 라이선스
 

@@ -26,24 +26,24 @@ MVC는 후행) · PostgreSQL 16 · Flyway · Maven · JUnit 5 + Testcontainers
 
 ## Phase 1: Setup
 
-- [ ] T001 Maven `pom.xml` — Spring Boot 3.3(web, data-rest, data-jpa, security, validation), Flyway, PostgreSQL, Testcontainers, JUnit 5
-- [ ] T002 [P] `src/main/resources/application.yml` — 포트(`BACKEND_PORT`)·DB(`POSTGRES_PORT`)·시크릿 환경변수 바인딩, `local`/`test` 프로파일, `spring.jpa.hibernate.ddl-auto=validate`, `spring.data.rest.base-path=/api`
-- [ ] T003 [P] `.envrc`(use_dev_ports) + `direnv allow` (dev-init), 포트 슬롯 확인
-- [ ] T004 [P] `docker-compose.yml` — PostgreSQL `"${POSTGRES_PORT:-15432}:5432"`
-- [ ] T005 [P] `src/main/java/com/shopflow/ShopFlowApplication.java`
-- [ ] T006 [P] README dev 실행 절(`./mvnw spring-boot:run`)
+- [X] T001 Maven `pom.xml` — Spring Boot 3.3(web, data-rest, data-jpa, security, validation), Flyway, PostgreSQL, Testcontainers, JUnit 5
+- [X] T002 [P] `src/main/resources/application.yml` — 포트(`BACKEND_PORT`)·DB(`POSTGRES_PORT`)·시크릿 환경변수 바인딩, `local`/`test` 프로파일, `spring.jpa.hibernate.ddl-auto=validate`, `spring.data.rest.base-path=/api`
+- [X] T003 [P] `.envrc`(use_dev_ports) + `direnv allow` (dev-init), 포트 슬롯 확인
+- [X] T004 [P] `docker-compose.yml` — PostgreSQL `"${POSTGRES_PORT:-15432}:5432"`
+- [X] T005 [P] `src/main/java/com/shopflow/ShopFlowApplication.java`
+- [X] T006 [P] README dev 실행 절(`./mvnw spring-boot:run`)
 
 ## Phase 2: Foundational (모든 스토리 선행)
 
-- [ ] T007 `src/main/resources/db/migration/V1__init.sql` — 전체 스키마(enum 8종, 13 테이블, 인덱스, 컨텍스트 내부 FK). enum은 varchar + `@Enumerated(STRING)` 매핑 전제
-- [ ] T008 [P] `common/domain/Money.java` — 정수 원 값객체(plus/times, 음수·오버플로 방어) + 단위테스트
-- [ ] T009 [P] `common/domain/Address.java` — 임베더블
-- [ ] T010 [P] `common/error/` — 도메인 예외 + 전역 예외 핸들러(한글, 민감정보 비노출)
-- [ ] T011 [P] `common/logging/CorrelationIdFilter.java` — 구조화 로깅 + correlation id (원칙 IV)
-- [ ] T012 [P] `common/time/ClockConfig.java` — `java.time.Clock` 빈 주입(TTL·시각 결정적 테스트용)
-- [ ] T013 `common/config/SecurityConfig.java` — 인증·인가·CSRF 골격
-- [ ] T014 [P] `common/config/RestExposureConfig.java` — Spring Data REST 노출 정책(기본 비노출, 조회 화이트리스트, **쓰기는 커스텀 컨트롤러로만**)
-- [ ] T015 [P] `src/test/java/com/shopflow/support/PostgresContainerBase.java` — Testcontainers 베이스
+- [X] T007 `src/main/resources/db/migration/V1__init.sql` — 전체 스키마(enum 8종, 13 테이블, 인덱스, 컨텍스트 내부 FK). enum은 varchar + `@Enumerated(STRING)` 매핑 전제
+- [X] T008 [P] `common/domain/Money.java` — 정수 원 값객체(plus/times, 음수·오버플로 방어) + 단위테스트
+- [X] T009 [P] `common/domain/Address.java` — 임베더블
+- [X] T010 [P] `common/error/` — 도메인 예외 + 전역 예외 핸들러(한글, 민감정보 비노출)
+- [X] T011 [P] `common/logging/CorrelationIdFilter.java` — 구조화 로깅 + correlation id (원칙 IV)
+- [X] T012 [P] `common/time/ClockConfig.java` — `java.time.Clock` 빈 주입(TTL·시각 결정적 테스트용)
+- [X] T013 `common/config/SecurityConfig.java` — 인증·인가·CSRF 골격
+- [X] T014 [P] `common/config/RestExposureConfig.java` — Spring Data REST 노출 정책(기본 비노출, 조회 화이트리스트, **쓰기는 커스텀 컨트롤러로만**)
+- [X] T015 [P] `src/test/java/com/shopflow/support/PostgresContainerBase.java` — Testcontainers 베이스
 
 **Checkpoint**: 스키마·공통·보안·REST 노출 정책·Clock·테스트 인프라 준비.
 
