@@ -1,0 +1,204 @@
+@startuml domain-class-marketplace-core
+' ShopFlow — 멀티셀러 핵심 커머스 도메인 클래스 다이어그램
+' 근거: specs/001-marketplace-core/data-model.md
+
+title ShopFlow 도메인 클래스 다이어그램 — 멀티셀러 핵심 커머스
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Apple SD Gothic Neo"
+skinparam classFontStyle bold
+skinparam class {
+  BackgroundColor #F5F7FF
+  BorderColor #3B5BDB
+  ArrowColor #495057
+  AttributeFontColor #212529
+}
+skinparam enumBackgroundColor #FFF9DB
+skinparam enumBorderColor #F08C00
+
+' ===================== 엔티티 =====================
+
+class User {
+  +id : Long
+  +email : String <<unique>>
+  +passwordHash : String
+  +displayName : String
+  +roles : Set<Role>
+  +createdAt : Instant
+}
+
+class Product {
+  +id : Long
+  +sellerId : Long
+  +name : String
+  +description : String
+  +priceKrw : long
+  +stock : int
+  +reserved : int
+  +imageUrl : String
+  +status : ProductStatus
+  +version : long
+  --
+  availableStock() : int  ' stock - reserved
+}
+
+class Cart {
+  +id : Long
+  +buyerId : Long
+}
+
+class CartItem {
+  +id : Long
+  +cartId : Long
+  +productId : Long
+  +quantity : int
+}
+
+class Order {
+  +id : Long
+  +buyerId : Long
+  +totalKrw : long
+  +shippingAddress : Address
+  +status : OrderStatus
+  +placedAt : Instant
+}
+
+class Fulfillment {
+  +id : Long
+  +orderId : Long
+  +sellerId : Long
+  +subtotalKrw : long
+  +status : FulfillmentStatus
+  +shippedAt : Instant
+  +deliveredAt : Instant
+}
+
+class OrderLine {
+  +id : Long
+  +fulfillmentId : Long
+  +productId : Long
+  +productNameSnapshot : String
+  +unitPriceKrwSnapshot : long
+  +quantity : int
+}
+
+class Payment {
+  +id : Long
+  +orderId : Long
+  +idempotencyKey : String <<unique>>
+  +amountKrw : long
+  +status : PaymentStatus
+  +gatewayRef : String
+  +createdAt : Instant
+}
+
+class PaymentIdempotency {
+  +key : String <<pk>>
+  +requestHash : String
+  +status : String
+  +orderId : Long
+  +createdAt : Instant
+}
+
+class StockReservation {
+  +id : Long
+  +productId : Long
+  +buyerId : Long
+  +quantity : int
+  +status : ReservationStatus
+  +expiresAt : Instant
+  +createdAt : Instant
+}
+
+' ===================== 값 객체 =====================
+
+class Address <<value>> {
+  +recipient : String
+  +address : String
+  +phone : String
+}
+
+class Money <<value>> {
+  +amountKrw : long
+  --
+  plus(Money) : Money
+  times(int) : Money
+}
+
+' ===================== 열거형 =====================
+
+enum Role {
+  BUYER
+  SELLER
+}
+
+enum ProductStatus {
+  ON_SALE
+  OFF_SALE
+}
+
+enum OrderStatus {
+  PAID
+  PARTIALLY_SHIPPED
+  SHIPPED
+  COMPLETED
+}
+
+enum FulfillmentStatus {
+  PAID
+  SHIPPING
+  DELIVERED
+}
+
+enum PaymentStatus {
+  APPROVED
+  REJECTED
+}
+
+enum ReservationStatus {
+  HELD
+  CONFIRMED
+  RELEASED
+}
+
+' ===================== 관계 =====================
+
+User "1" --> "*" Product : 판매(소유) >
+User "1" --> "1" Cart : 소유 >
+Cart "1" *-- "*" CartItem : 항목
+CartItem "*" --> "1" Product : 참조 >
+
+User "1" --> "*" Order : 구매 >
+Order "1" *-- "*" Fulfillment : 이행 단위
+Fulfillment "*" --> "1" User : 담당 판매자 >
+Fulfillment "1" *-- "*" OrderLine : 라인(스냅샷)
+OrderLine "*" --> "1" Product : 참조 >
+
+Order "1" --> "1" Payment : 결제
+Payment "1" --> "1" PaymentIdempotency : 멱등키 >
+
+Product "1" --> "*" StockReservation : 선점
+StockReservation "*" --> "1" User : 선점 구매자 >
+
+' 값객체·enum 연결(대표)
+Order *-- Address
+User *-- Role
+Product ..> ProductStatus
+Order ..> OrderStatus
+Fulfillment ..> FulfillmentStatus
+Payment ..> PaymentStatus
+StockReservation ..> ReservationStatus
+Money ..> Product : 금액 표현
+
+note bottom of Product
+  불변식: 0 ≤ reserved ≤ stock (초과 판매 0)
+  선점/해제/확정은 조건부 UPDATE로 원자 처리
+end note
+
+note bottom of OrderLine
+  결제 시점 단가·상품명 스냅샷 →
+  이후 상품 변경이 주문에 영향 없음 (FR-023)
+end note
+
+@enduml
