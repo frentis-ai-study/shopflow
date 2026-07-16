@@ -1,17 +1,20 @@
 <!--
 Sync Impact Report (동기화 영향 보고)
-- 버전 변경: 1.1.1 → 1.2.0
-- 버전 근거: 새 원칙 VII(마켓플레이스 정산·주문 생명주기 무결성) 추가. 원칙 신규 추가는
-  지침의 실질적 확장이므로 MINOR.
+- 버전 변경: 1.2.0 → 1.3.0
+- 버전 근거: 새 원칙 VIII(이슈→브랜치→PR 워크플로) 추가 및 개발 워크플로 절에 Spec Kit
+  단계 매핑 표 추가. 원칙 신규 추가·지침 실질 확장이므로 MINOR.
 - 수정된 원칙:
-  - 추가: VII. 마켓플레이스 정산·주문 생명주기 무결성
-  - (원칙 I~VI는 1.1.1과 동일)
-- 추가된 섹션: 없음(기존 핵심 원칙 아래 신규 원칙 추가)
+  - 추가: VIII. 이슈 → 브랜치 → PR 워크플로 (타협 불가)
+  - (원칙 I~VII는 1.2.0과 동일)
+- 추가된 섹션: 개발 워크플로·품질 게이트 절에 "Spec Kit 단계 ↔ Git 워크플로 매핑" 하위 표
 - 제거된 섹션: 없음
 - 검토한 템플릿:
-  - .specify/templates/plan-template.md ✅ 정합 (Constitution Check가 constitution을 동적 참조 — 수정 불필요)
-  - .specify/templates/spec-template.md ✅ 정합 (판매자별 이행·정산·환불은 개별 사양의 요구사항으로 표현)
-  - .specify/templates/tasks-template.md ✅ 정합 (원칙 VII는 새 태스크 범주를 만들지 않음; 결제/재고/정산 로직은 원칙 I에 따라 테스트 필수)
+  - .specify/templates/plan-template.md ✅ 정합 (Constitution Check가 constitution을 동적 참조)
+  - .specify/templates/spec-template.md ✅ 정합 (사양 제안은 이슈로 등록 후 spec 문서화)
+  - .specify/templates/tasks-template.md ✅ 정합 (원칙 VIII은 워크플로 규율이며 새 태스크 범주 없음)
+- 강제 장치(저장소 설정):
+  - .github/ISSUE_TEMPLATE/spec-proposal.md, .github/PULL_REQUEST_TEMPLATE.md 추가
+  - main 브랜치 보호 규칙: PR 병합 강제
 - 남은 TODO: 없음(모든 플레이스홀더 해소)
 
 변경 이력:
@@ -20,6 +23,7 @@ Sync Impact Report (동기화 영향 보고)
 - 1.1.0 (2026-07-16): 원칙 VI(한글·직관적 표현 산출물) 추가.
 - 1.1.1 (2026-07-16): 본문 전체 한글화(의미 불변).
 - 1.2.0 (2026-07-16): 원칙 VII(마켓플레이스 정산·주문 생명주기 무결성) 추가.
+- 1.3.0 (2026-07-16): 원칙 VIII(이슈→브랜치→PR 워크플로) 및 Spec Kit 단계 매핑 추가.
 -->
 
 # ShopFlow 헌장 (Constitution)
@@ -121,6 +125,23 @@ Sync Impact Report (동기화 영향 보고)
 정산 오류 같은 되돌리기 어려운 사고를 구조적으로 예방한다. (요구사항 확장 시 이 원칙의
 범위 안에서 정합성을 유지한다.)
 
+### VIII. 이슈 → 브랜치 → PR 워크플로 (Issue → Branch → PR Workflow, 타협 불가)
+
+모든 작업은 "제안은 이슈로, 작업은 브랜치로, 완료는 PR로"라는 흐름을 강제한다. 규칙:
+- 제안은 이슈로: 새 요구사항이나 사양(spec) 제안은 반드시 GitHub 이슈로 등록해 논의·합의한다.
+  이슈 없이 시작한 기능 작업은 인정하지 않는다.
+- 작업은 브랜치로: 구현·문서·수정은 이슈에 연결된 전용 브랜치에서 진행한다. `main`에 직접
+  커밋·푸시하지 않는다. 브랜치명은 `feature/<이슈번호>-<슬러그>`(또는 `fix/`, `docs/`,
+  `chore/`) 규칙을 따른다.
+- 완료는 PR로: 작업 완료 요청은 반드시 Pull Request로 한다. PR 본문은 대상 이슈를 닫는
+  키워드(`Closes #N`)로 연결하고, 원칙 준수 여부와 테스트 결과를 요약한다.
+- `main` 병합은 PR을 통해서만 이뤄진다(브랜치 보호로 강제). 병합 전 품질 게이트(개발
+  워크플로·품질 게이트 절)를 통과해야 한다.
+
+근거: 제안·작업·완료를 이슈·브랜치·PR로 분리하면 변경 이력이 추적 가능해지고, 리뷰
+없는 무단 변경을 구조적으로 차단한다. Spec Kit 단계와 1:1로 대응해 기획부터 병합까지
+하나의 감사 가능한 흐름이 된다.
+
 ## 기술·보안 제약 (Technology & Security Constraints)
 
 - 백엔드: Java + Spring Boot (Spring MVC, Spring Data, Spring Security).
@@ -144,6 +165,20 @@ Sync Impact Report (동기화 영향 보고)
   근거를 적고 승인받는다. 그렇지 않으면 변경을 반려한다.
 - 계획 템플릿의 Constitution Check는 각 기능 계획을 설계 전과 구현 전에 게이트로 검증한다.
 
+### Spec Kit 단계 ↔ Git 워크플로 매핑 (원칙 VIII 구체화)
+
+| Spec Kit 단계 | Git 워크플로 | 산출물 |
+|---|---|---|
+| `/speckit-specify` (요구사항·사양 제안) | **GitHub 이슈** 생성 | 사양 제안 이슈 |
+| `/speckit-clarify` (모호점 해소) | 해당 이슈에 코멘트로 합의 기록 | 이슈 코멘트 |
+| `/speckit-plan` → `/speckit-tasks` | 이슈에서 **작업 브랜치** 생성 | `feature/<이슈번호>-<슬러그>` |
+| `/speckit-implement` | 브랜치에서 커밋(이슈 번호 참조) | 커밋 |
+| `/speckit-analyze` (정합성 점검) | PR 생성 전 자체 검증 | 점검 결과 |
+| 완료 요청 | **Pull Request** 생성(`Closes #N`), `main` 병합 | PR |
+
+- 이슈에는 `spec` 라벨을, 헌장 관련 변경에는 `constitution` 라벨을 붙여 분류한다.
+- 하나의 이슈 = 하나의 기능 브랜치 = 하나의 PR을 기본 단위로 한다.
+
 ## 거버넌스 (Governance)
 
 이 헌장은 ShopFlow의 다른 개발 관행보다 우선한다. 개정은 반드시 문서로 제안·검토·승인하며,
@@ -159,4 +194,4 @@ Sync Impact Report (동기화 영향 보고)
 이 파일이 권위 있는 원천(single source of truth)이다. 에이전트/런타임 가이드 문서(예:
 CLAUDE.md)는 이 헌장과 일관되게 유지한다.
 
-**버전(Version)**: 1.2.0 | **제정일(Ratified)**: 2026-07-16 | **최종 개정일(Last Amended)**: 2026-07-16
+**버전(Version)**: 1.3.0 | **제정일(Ratified)**: 2026-07-16 | **최종 개정일(Last Amended)**: 2026-07-16
