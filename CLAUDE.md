@@ -6,7 +6,8 @@
 ## 아키텍처
 
 - **백엔드 = 단일 배포 모듈러 모놀리스**(컨텍스트별 인스턴스 분리는 Non-goal, ADR-0010 v2).
-- **프론트엔드 = 별도 인스턴스**(외부 디자인 완료 후 구축). 백엔드 REST를 소비(ADR-0011).
+- **프론트엔드 = 별도 인스턴스**(`frontend/` — 별도 Maven 프로젝트). 백엔드 REST를 세션 릴레이
+  (BFF 쿠키 릴레이)로 소비(ADR-0011). UI 프로토타입 기반 화면 8종 구현 완료.
 - 스택: Java 21 · Spring Boot 3.3(Data JPA, Security, Data REST) · PostgreSQL 16 · Flyway · Maven.
 - 바운디드 컨텍스트 = 패키지: `account · product · order(장바구니 포함) · payment · inventory · delivery · common`.
 
@@ -41,6 +42,10 @@ direnv exec . ./mvnw test                   # 테스트(Testcontainers 또는 te
 - **JDK는 21 고정**. Homebrew maven이 JDK 25를 끌어올 수 있으니 `JAVA_HOME`을 21로 설정해 실행.
 - 통합 테스트는 `application-test.yml`(compose PostgreSQL)에 연결(`@ActiveProfiles("test")`).
   CI에서 Docker 소켓이 잡히면 `PostgresContainerBase`(Testcontainers)로 전환 가능.
+- 프론트엔드(`frontend/`)는 백엔드 실행 후 `cd frontend && ../mvnw spring-boot:run`으로 기동
+  (`FRONTEND_PORT`, 기본 13000). CSRF는 쿠키 기반(`XSRF-TOKEN`)이며 즉시 해석 필터
+  (`CsrfCookieFilter`)가 `UsernamePasswordAuthenticationFilter` **이전**에 있어야 로그인
+  응답에도 쿠키가 실린다(그 필터는 인증 성공 시 체인을 종료하므로 순서가 중요).
 
 ## 알려진 후속(범위 밖)
 
