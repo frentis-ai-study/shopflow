@@ -15,6 +15,12 @@ Project shopflow {
     멀티셀러 핵심 커머스 스키마.
     컨텍스트: 계정 / 상품 / 주문(장바구니 포함) / 결제 / 재고 / 배송.
     컨텍스트 경계를 넘는 FK는 논리적 참조(앱 레벨)로, 분리 시 물리 FK로 두지 않는다.
+
+    [선택/필수 표기]
+      not null  = 필수 (1)
+      nullable  = 선택 (0..1)   ← [null] 표시 컬럼
+    [관계 다중도]  Ref a.x > b.y : b(1) ── a(0..*)   (b 하나에 a 여럿)
+                   unique 컬럼의 참조는 1:1(0..1) 을 의미.
   '''
 }
 
@@ -80,10 +86,10 @@ Table sellers {
   user_id bigint [unique, not null, note: '1:1']
   seller_type seller_type [not null]
   store_name varchar(100) [not null]
-  business_registration_number varchar(20) [note: '사업자·법인이면 필수, 형식·중복 검증']
-  representative_name varchar(50) [note: '사업자·법인이면 필수']
-  contact_phone varchar(30)
-  contact_email varchar(255)
+  business_registration_number varchar(20) [null, note: '사업자·법인이면 필수, 형식·중복 검증']
+  representative_name varchar(50) [null, note: '사업자·법인이면 필수']
+  contact_phone varchar(30) [null]
+  contact_email varchar(255) [null]
   status seller_status [not null, default: 'ACTIVE']
   created_at timestamptz [not null]
   Note: 'sellerType != INDIVIDUAL 이면 사업자등록번호·대표자 필수 (ADR-0009)'
@@ -94,11 +100,11 @@ Table products {
   id bigint [pk, increment]
   seller_id bigint [not null, note: '[cross-context] → sellers.id']
   name varchar(200) [not null]
-  description text
+  description text [null]
   price_krw bigint [not null, note: '정수 원, >= 0']
   stock int [not null, note: '>= 0']
   reserved int [not null, default: 0, note: '0 <= reserved <= stock (초과판매 0)']
-  image_url varchar(500)
+  image_url varchar(500) [null]
   status product_status [not null, default: 'ON_SALE']
   version bigint [not null, default: 0, note: '낙관적 버전(보조)']
   indexes {
@@ -168,7 +174,7 @@ Table payments {
   idempotency_key varchar(64) [unique, not null, note: '서버 발급 UUID']
   amount_krw bigint [not null, note: '서버 검증 금액']
   status payment_status [not null]
-  gateway_ref varchar(100)
+  gateway_ref varchar(100) [null]
   created_at timestamptz [not null]
 }
 
@@ -176,7 +182,7 @@ Table payment_idempotency {
   key varchar(64) [pk, note: '멱등키(UUID)']
   request_hash varchar(64) [not null]
   status varchar(20) [not null]
-  order_id bigint [note: '[cross-context] 생성된 주문(있으면)']
+  order_id bigint [null, note: '[cross-context] 생성된 주문(있으면)']
   created_at timestamptz [not null]
   Note: '동일 키 재요청 시 기존 결과 반환 — 정확히 한 번(FR-018, SC-004)'
 }
@@ -202,8 +208,8 @@ Table deliveries {
   id bigint [pk, increment]
   sub_order_id bigint [unique, not null, note: '[cross-context] → sub_orders.id (1:1)']
   status delivery_status [not null, default: 'PENDING']
-  shipped_at timestamptz
-  delivered_at timestamptz [note: '배송완료 시각 — 향후 정산 트리거']
+  shipped_at timestamptz [null]
+  delivered_at timestamptz [null, note: '배송완료 시각 — 향후 정산 트리거']
   Note: '결제 완료 시 SubOrder마다 PENDING 생성. PENDING→SHIPPING→DELIVERED(FR-011)'
 }
 

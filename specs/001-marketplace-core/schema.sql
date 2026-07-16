@@ -1,6 +1,6 @@
 -- SQL dump generated using DBML (dbml.dbdiagram.io)
 -- Database: PostgreSQL
--- Generated at: 2026-07-16T04:46:11.353Z
+-- Generated at: 2026-07-16T04:51:03.255Z
 
 CREATE TYPE "role" AS ENUM (
   'BUYER',

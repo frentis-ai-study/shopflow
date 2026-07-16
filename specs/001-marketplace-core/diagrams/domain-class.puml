@@ -23,6 +23,10 @@ legend top left
   실선 화살표 = 같은 컨텍스트 내 관계 / 합성
   점선 «ref»  = 컨텍스트 경계를 넘는 ID 참조 (느슨한 결합)
   ---
+  다중도: 1 = 정확히 하나, 0..1 = 선택(없거나 하나),
+          0..* = 없거나 여럿, 1..* = 하나 이상.
+  속성 [0..1] = 선택(nullable), 표기 없으면 필수(1).
+  ---
   각 패키지 = 바운디드 컨텍스트 = 추출 가능 모듈 (ADR-0010).
   컨텍스트 경계는 하드 FK가 아닌 ID 참조 → 추후 별도 인스턴스로 분리 가능.
 endlegend
@@ -42,10 +46,10 @@ package "계정 (Account)" <<Rectangle>> #EAF2FF {
     +userId : Long <<unique>>
     +sellerType : SellerType
     +storeName : String
-    +businessRegistrationNumber : String
-    +representativeName : String
-    +contactPhone : String
-    +contactEmail : String
+    +businessRegistrationNumber : String [0..1]
+    +representativeName : String [0..1]
+    +contactPhone : String [0..1]
+    +contactEmail : String [0..1]
     +status : SellerStatus
     +createdAt : Instant
   }
@@ -62,8 +66,8 @@ package "계정 (Account)" <<Rectangle>> #EAF2FF {
     ACTIVE
     SUSPENDED
   }
-  User *-- Role
-  User "1" -- "1" Seller : 판매자 프로필
+  User "1" -- "1..*" Role
+  User "1" -- "0..1" Seller : 판매자 프로필
   Seller ..> SellerType
   Seller ..> SellerStatus
 }
@@ -74,11 +78,11 @@ package "상품 (Product)" <<Rectangle>> #E6FCF5 {
     +id : Long
     +sellerId : Long  <<ref: Seller>>
     +name : String
-    +description : String
+    +description : String [0..1]
     +priceKrw : long
     +stock : int
     +reserved : int
-    +imageUrl : String
+    +imageUrl : String [0..1]
     +status : ProductStatus
     +version : long
     --
@@ -137,10 +141,10 @@ package "주문 (Order) — 장바구니 포함" <<Rectangle>> #F3F0FF {
     SHIPPED
     COMPLETED
   }
-  Cart "1" *-- "*" CartItem : 항목
-  Order "1" *-- "*" SubOrder : 하위주문
-  SubOrder "1" *-- "*" OrderLine : 라인(스냅샷)
-  Order *-- Address
+  Cart "1" *-- "0..*" CartItem : 항목
+  Order "1" *-- "1..*" SubOrder : 하위주문
+  SubOrder "1" *-- "1..*" OrderLine : 라인(스냅샷)
+  Order "1" *-- "1" Address
   Order ..> OrderStatus
 }
 
@@ -152,14 +156,14 @@ package "결제 (Payment)" <<Rectangle>> #FFF4E6 {
     +idempotencyKey : String <<unique>>
     +amountKrw : long
     +status : PaymentStatus
-    +gatewayRef : String
+    +gatewayRef : String [0..1]
     +createdAt : Instant
   }
   class PaymentIdempotency {
     +key : String <<pk>>
     +requestHash : String
     +status : String
-    +orderId : Long
+    +orderId : Long [0..1]
     +createdAt : Instant
   }
   enum PaymentStatus {
@@ -168,6 +172,7 @@ package "결제 (Payment)" <<Rectangle>> #FFF4E6 {
   }
   Payment "1" --> "1" PaymentIdempotency : 멱등키 >
   Payment ..> PaymentStatus
+  ' 멱등 레코드는 결제 확정 전 단계에도 존재 가능(주문 미생성) → orderId [0..1]
 }
 
 ' ===================== 재고 컨텍스트 =====================
@@ -195,8 +200,8 @@ package "배송 (Delivery)" <<Rectangle>> #E7F5FF {
     +id : Long
     +subOrderId : Long  <<ref: SubOrder>>
     +status : DeliveryStatus
-    +shippedAt : Instant
-    +deliveredAt : Instant
+    +shippedAt : Instant [0..1]
+    +deliveredAt : Instant [0..1]
   }
   enum DeliveryStatus {
     PENDING
@@ -217,14 +222,14 @@ package "공통 (Common)" <<Rectangle>> #F1F3F5 {
 }
 
 ' ============ 컨텍스트 경계를 넘는 ID 참조 (느슨한 결합) ============
-Seller "1" <.. "*" Product : «ref» 판매자
-User "1" <.. "1" Cart : «ref» 구매자
-User "1" <.. "*" Order : «ref» 구매자
-Seller "1" <.. "*" SubOrder : «ref» 담당 판매자
-Product "1" <.. "*" CartItem : «ref»
-Product "1" <.. "*" OrderLine : «ref» (스냅샷)
-Product "1" <.. "*" StockReservation : «ref»
-User "1" <.. "*" StockReservation : «ref» 구매자
+Seller "1" <.. "0..*" Product : «ref» 판매자
+User "1" <.. "0..1" Cart : «ref» 구매자
+User "1" <.. "0..*" Order : «ref» 구매자
+Seller "1" <.. "0..*" SubOrder : «ref» 담당 판매자
+Product "1" <.. "0..*" CartItem : «ref»
+Product "1" <.. "0..*" OrderLine : «ref» (스냅샷)
+Product "1" <.. "0..*" StockReservation : «ref»
+User "1" <.. "0..*" StockReservation : «ref» 구매자
 Order "1" <.. "1" Payment : «ref»
 SubOrder "1" <.. "1" Delivery : «ref» 1:1
 
