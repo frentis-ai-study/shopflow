@@ -1,0 +1,71 @@
+@startuml state-machines
+' ShopFlow — 모든 상태 enum의 상태머신
+' 근거: data-model.md (ReservationStatus, DeliveryStatus, OrderStatus, PaymentStatus,
+'        ProductStatus, SellerStatus)
+
+title ShopFlow 상태머신 — 재고선점 / 배송 / 주문 / 결제 / 상품 / 판매자
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Apple SD Gothic Neo"
+skinparam state {
+  BackgroundColor #F5F7FF
+  BorderColor #3B5BDB
+  ArrowColor #495057
+}
+
+' ===================== 재고 선점 =====================
+state "재고 선점  (ReservationStatus)" as RESV {
+  [*] --> HELD : 선점 성공(조건부 UPDATE)
+  HELD --> CONFIRMED : 결제 성공 / 확정 차감
+  HELD --> RELEASED : 결제 실패·거절 / 재고 복원
+  HELD --> RELEASED : TTL 만료 스윕 / 재고 복원 (SC-005)
+  CONFIRMED --> [*]
+  RELEASED --> [*]
+}
+
+' ===================== 배송 =====================
+state "배송  (DeliveryStatus)" as DELIV {
+  [*] --> PENDING : 결제 완료 시 SubOrder마다 생성
+  PENDING --> SHIPPING : 판매자 배송중 전이 (FR-011)
+  SHIPPING --> DELIVERED : 판매자 배송완료 / deliveredAt 기록 → 정산 트리거
+  DELIVERED --> [*]
+  note right of PENDING : 소유 판매자만 전이\n건너뛰기·역행 금지 (R4)
+}
+
+' ===================== 주문 (집계) =====================
+state "주문  (OrderStatus, 하위 Delivery 집계)" as ORDER {
+  [*] --> PAID : 결제 완료(모든 Delivery=PENDING)
+  PAID --> PARTIALLY_SHIPPED : 일부 Delivery가 SHIPPING/DELIVERED
+  PAID --> SHIPPED : 모든 Delivery ≥ SHIPPING (단일/동시)
+  PARTIALLY_SHIPPED --> SHIPPED : 나머지도 SHIPPING 이상
+  SHIPPED --> COMPLETED : 모든 Delivery = DELIVERED
+  COMPLETED --> [*]
+  note bottom of PARTIALLY_SHIPPED : 여러 판매자 부분 배송 상태
+}
+
+' ===================== 결제 =====================
+state "결제  (PaymentStatus)" as PAY {
+  [*] --> 승인요청 : 멱등 결제 요청
+  승인요청 --> APPROVED : 게이트웨이 승인
+  승인요청 --> REJECTED : 게이트웨이 거절
+  APPROVED --> [*]
+  REJECTED --> [*]
+  note right of 승인요청 : 동일 멱등키 재요청은\n기존 결과 반환(재처리 없음)
+}
+
+' ===================== 상품 =====================
+state "상품  (ProductStatus)" as PROD {
+  [*] --> ON_SALE : 상품 등록
+  ON_SALE --> OFF_SALE : 판매 중지(구매자 노출 제외)
+  OFF_SALE --> ON_SALE : 판매 재개
+}
+
+' ===================== 판매자 =====================
+state "판매자  (SellerStatus)" as SELLER {
+  [*] --> ACTIVE : 입점(판매자 프로필 생성)
+  ACTIVE --> SUSPENDED : 입점 정지(신규 등록·판매 제한)
+  SUSPENDED --> ACTIVE : 입점 재개
+}
+
+@enduml
