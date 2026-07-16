@@ -1,0 +1,98 @@
+@startuml business-process-marketplace-core
+' ShopFlow — 멀티셀러 핵심 커머스 비즈니스 프로세스 (스윔레인 액티비티)
+' 근거: specs/001-marketplace-core/spec.md, usecases.md
+
+title ShopFlow 비즈니스 프로세스 — 판매자 등록부터 구매·결제·이행까지
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Apple SD Gothic Neo"
+skinparam ActivityBackgroundColor #F5F7FF
+skinparam ActivityBorderColor #3B5BDB
+skinparam ActivityDiamondBackgroundColor #FFF3BF
+skinparam ActivityDiamondBorderColor #F08C00
+skinparam ArrowColor #495057
+skinparam swimlaneBorderColor #ADB5BD
+skinparam swimlaneTitleFontStyle bold
+
+|#EAF2FF|판매자|
+start
+:상품 등록\n(이름·가격·재고·이미지);
+note right: FR-006. "판매중"으로 노출
+:재고/가격 관리·판매 상태 전환;
+
+|#F3F0FF|구매자|
+:상품 탐색·검색;
+:상품 상세 확인;
+if (구매 결정?) then (예)
+  :장바구니에 담기·수량 조정;
+  :배송지 입력 후 결제 요청\n(멱등키 동반);
+else (아니오)
+  stop
+endif
+
+|#FFFFFF|ShopFlow 시스템|
+:결제 금액 서버측 계산·검증;
+note right: FR-019. 클라이언트 금액 불신
+if (동일 멱등키로 이미 처리됨?) then (예)
+  :기존 결제 결과 반환\n(주문 재생성 안 함);
+  note right: FR-018 / SC-004
+  |구매자|
+  :중복 없이 동일 결과 확인;
+  stop
+else (아니오)
+  |ShopFlow 시스템|
+endif
+if (재고 선점 가능?) then (예)
+  :재고 선점 (TTL 10분);
+  note right
+    FR-017 / FR-020
+    [이탈] 결제 미완료로 이탈 시
+    10분 후 선점 자동 해제·재고 복원
+    (SC-005)
+  end note
+else (재고 부족·소진)
+  :결제 거절·품절 안내;
+  note right: SC-003 초과판매 0
+  |구매자|
+  :품절 확인;
+  stop
+endif
+
+|#FFF9DB|모의 결제 게이트웨이|
+:결제 승인 요청 처리\n(성공/실패 시뮬레이션);
+
+|#FFFFFF|ShopFlow 시스템|
+if (결제 성공?) then (성공)
+  :선점 → 확정 차감 전환;
+  :주문 "결제완료" 생성;
+  :판매자별 이행 단위 분리\n+ 상품 스냅샷 저장;
+  note right: FR-021 / FR-023
+else (실패)
+  :선점 해제·주문 미생성;
+  note right: FR-017. 재고 보존
+  |구매자|
+  :결제 실패 사유 확인;
+  stop
+endif
+
+|구매자|
+:주문번호·결제완료 안내 수신;
+
+|판매자|
+:내 주문(이행 단위) 확인;
+note right: FR-010. 본인 건만
+:상태 → "배송중" 전이;
+
+|구매자|
+:주문 상태 "배송중" 확인;
+
+|판매자|
+:상태 → "배송완료" 전이\n(완료 시각 기록);
+note right: FR-011. 향후 정산 트리거(후속)
+
+|구매자|
+:주문 상태 "배송완료" 확인;
+stop
+
+@enduml
