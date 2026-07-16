@@ -43,7 +43,7 @@ Thymeleaf, Bean Validation(Hibernate Validator), Flyway(마이그레이션)
 - 재고 선점의 동시성 제어 방식(원자적 조건부 UPDATE vs 비관적 락 vs 낙관적 락)
 - 재고 선점 만료(TTL) 처리 메커니즘(스케줄 스윕 vs 지연 해제)
 - 멱등키 발급·저장·조회 방식
-- 주문/이행 단위 상태 기계 표현
+- 주문/하위주문 상태 기계 표현
 - 결제 어댑터 인터페이스 계약
 
 ## 헌장 준수 점검 (Constitution Check)
@@ -58,7 +58,7 @@ Thymeleaf, Bean Validation(Hibernate Validator), Flyway(마이그레이션)
 | IV. 관측성 | 구조화 로깅(SLF4J/logback), 주문·결제 상태 전이 감사 기록 + correlation id | ✅ |
 | V. 단순성·계층 | 단일 모놀리스, controller→service→repository, 뷰 로직 최소화 | ✅ |
 | VI. 한글 산출물 | 모든 설계·문서·주석·UI 한글 | ✅ |
-| VII. 마켓플레이스 | 판매자별 이행 단위 분리, 재고 선점, 멱등 결제 | ✅ |
+| VII. 마켓플레이스 | 판매자별 하위주문 분리, 재고 선점, 멱등 결제 | ✅ |
 | VIII. 워크플로 | 이슈 #2 → feature 브랜치 → PR 예정 | ✅ |
 
 **게이트 결과**: 위반 없음 → Complexity Tracking 비움.
@@ -93,7 +93,7 @@ src/main/java/com/shopflow/
 │   ├── domain/  web/  repository/
 ├── cart/             # 장바구니 (Cart, CartItem)
 │   ├── domain/  web/  repository/
-├── order/            # 주문·이행 단위·상태 기계 (Order, Fulfillment)
+├── order/            # 주문·하위주문·상태 기계 (Order, SubOrder)
 │   ├── domain/  web/  repository/
 ├── payment/          # 결제 어댑터·멱등 (PaymentGateway, MockPaymentGateway, Idempotency)
 │   ├── domain/  adapter/  repository/

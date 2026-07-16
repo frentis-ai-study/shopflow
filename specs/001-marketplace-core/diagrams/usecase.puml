@@ -38,7 +38,7 @@ rectangle "ShopFlow 시스템" {
   usecase "상품 등록" as UC_AddProduct
   usecase "상품 정보 수정\n(가격·재고)" as UC_EditProduct
   usecase "판매 상태 전환\n(판매중/중지)" as UC_ToggleSale
-  usecase "내 주문(이행) 조회" as UC_SellerOrders
+  usecase "내 주문(하위주문) 조회" as UC_SellerOrders
   usecase "배송 상태 전이\n(배송중→배송완료)" as UC_Fulfill
 
   ' ---- 구매 (FR-012~016) ----
@@ -75,7 +75,7 @@ note bottom of UC_Checkout
   - 재고 선점 (TTL 10분, 미결제 시 자동 해제) — FR-017 / SC-005
   - 서버측 금액 검증 — FR-019
   - 멱등 결제 (재시도·중복에도 1회) — FR-018
-  - 판매자별 이행 분리 — FR-021
+  - 판매자별 하위주문 분리 — FR-021
 end note
 
 note right of UC_Fulfill

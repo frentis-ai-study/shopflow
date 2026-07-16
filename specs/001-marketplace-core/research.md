@@ -45,12 +45,12 @@
   - 분산 락: 인프라 복잡, 저장소 유니크 제약으로 충분.
 - **보존**: 멱등 레코드는 최소 주문 조회 기간 동안 보존(구체 기간은 운영 정책, 기본 90일 가정).
 
-## R4. 주문·이행 단위 상태 기계
+## R4. 주문·하위주문 상태 기계
 
 - **결정**: **2계층 상태 모델.**
-  - 이행 단위(Fulfillment) 상태: `PAID`(결제완료) → `SHIPPING`(배송중) → `DELIVERED`(배송완료).
+  - 하위주문(SubOrder) 상태: `PAID`(결제완료) → `SHIPPING`(배송중) → `DELIVERED`(배송완료).
     허용 전이만 서비스에서 강제(건너뛰기·역행 거절).
-  - 주문(Order) 전체 상태: 이행 단위 상태들의 집계(예: 전부 DELIVERED면 주문도 완료 표시).
+  - 주문(Order) 전체 상태: 하위주문 상태들의 집계(예: 전부 DELIVERED면 주문도 완료 표시).
   - 각 전이는 감사 로그(전이 주체·시각·이전/이후 상태)를 남긴다(FR-022, 원칙 IV).
 - **근거**: 판매자별 이행을 독립 추적하면서 구매자에겐 하나의 주문으로 보인다([ADR-0005](../../docs/adr/0005-per-seller-order-splitting.md)).
 - **검토한 대안**: 단일 상태 필드만 → 판매자별 부분 배송을 표현 불가.
@@ -99,7 +99,7 @@
 | 동시성 제어 | 원자적 조건부 UPDATE(행 잠금 암묵), 트랜잭션 내 |
 | TTL 처리 | 스케줄 스윕(60초) + 지연 판정 |
 | 멱등 | 서버 발급 UUID + `payment_idempotency` 유니크 제약 |
-| 상태 기계 | 이행 단위 PAID→SHIPPING→DELIVERED, 주문은 집계 |
+| 상태 기계 | 하위주문 PAID→SHIPPING→DELIVERED, 주문은 집계 |
 | 결제 | `PaymentGateway` 어댑터 + `MockPaymentGateway` |
 | 인증 | Spring Security 세션 + BCrypt + CSRF |
 | 금액 | 정수 원(long) / `Money` 값객체 |

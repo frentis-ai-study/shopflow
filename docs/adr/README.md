@@ -19,7 +19,7 @@
 | [0002](./0002-payment-external-delegation-mock-gateway.md) | 결제는 외부 위임, MVP는 모의 게이트웨이 | 수용 | II |
 | [0003](./0003-idempotent-payment-exactly-once.md) | 멱등키로 정확히 한 번 결제 | 수용 | III, VII |
 | [0004](./0004-stock-reservation-ttl.md) | 결제 전 재고 선점 + TTL 자동 해제 | 수용 | III, VII |
-| [0005](./0005-per-seller-order-splitting.md) | 멀티셀러 주문을 판매자별 이행 단위로 분리 | 수용 | VII |
+| [0005](./0005-per-seller-order-splitting.md) | 멀티셀러 주문을 판매자별 하위주문으로 분리 | 수용 | VII |
 | [0006](./0006-money-fixed-precision.md) | 금액은 고정소수점(정수 최소단위)으로 처리 | 수용 | III |
 | [0007](./0007-issue-branch-pr-workflow.md) | 이슈 → 브랜치 → PR 워크플로 강제 | 수용 | VIII |
 

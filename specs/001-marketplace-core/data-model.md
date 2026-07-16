@@ -13,15 +13,15 @@
 User 1─* Product           (판매자 소유)
 User 1─1 Cart 1─* CartItem  (구매자 장바구니)
 User 1─* Order              (구매자 주문)
-Order 1─* Fulfillment       (판매자별 이행 단위)
-Fulfillment *─1 User(seller)
-Fulfillment 1─* OrderLine   (스냅샷 라인)
+Order 1─* SubOrder       (판매자별 하위주문)
+SubOrder *─1 User(seller)
+SubOrder 1─* OrderLine   (스냅샷 라인)
 Order 1─1 Payment
 Product 1─* StockReservation
 Payment 1─1 PaymentIdempotency(key)
 ```
 
-> User는 역할(구매자/판매자)을 복수 보유(FR-004). "판매자"는 상품·이행 단위를 소유한 User.
+> User는 역할(구매자/판매자)을 복수 보유(FR-004). "판매자"는 상품·하위주문을 소유한 User.
 
 ---
 
@@ -86,26 +86,26 @@ Payment 1─1 PaymentIdempotency(key)
 | buyerId | Long (FK→User) | 구매자 |
 | totalKrw | long | 총액(정수 원), 서버 산출 (FR-019) |
 | shippingAddress | Address(값) | 배송지(수령인·주소·연락처) |
-| status | OrderStatus | 이행 단위 집계 상태 |
+| status | OrderStatus | 하위주문 집계 상태 |
 | placedAt | Instant | 결제완료 시각 |
 
 - **OrderStatus**(enum, 집계): `PAID`, `PARTIALLY_SHIPPED`, `SHIPPED`, `COMPLETED`.
-  이행 단위 상태들의 집계로 산출(R4). (예: 전 이행 DELIVERED → `COMPLETED`.)
+  하위주문 상태들의 집계로 산출(R4). (예: 모든 하위주문이 DELIVERED → `COMPLETED`.)
 - 한 번의 결제 = 하나의 Order(멱등, R3).
 
-## Fulfillment (이행 단위 = 판매자별 하위 주문)
+## SubOrder (하위주문 = 판매자별 하위 주문)
 
 | 필드 | 타입 | 설명 |
 |---|---|---|
-| id | Long (PK) | 이행 단위 식별자 |
+| id | Long (PK) | 하위주문 식별자 |
 | orderId | Long (FK→Order) | 소속 주문 |
 | sellerId | Long (FK→User) | 담당 판매자 |
 | subtotalKrw | long | 이 판매자 분 소계(정수 원) — 향후 정산 기준 |
-| status | FulfillmentStatus | 이행 상태 |
+| status | SubOrderStatus | 배송 상태 |
 | shippedAt | Instant? | 배송중 전이 시각 |
 | deliveredAt | Instant? | 배송완료 시각(향후 정산 트리거) |
 
-- **FulfillmentStatus**(enum): `PAID`(결제완료) → `SHIPPING`(배송중) → `DELIVERED`(배송완료).
+- **SubOrderStatus**(enum): `PAID`(결제완료) → `SHIPPING`(배송중) → `DELIVERED`(배송완료).
 - **상태 전이 규칙**(R4, FR-011/FR-022):
   - 허용: `PAID→SHIPPING`, `SHIPPING→DELIVERED`.
   - 금지: 건너뛰기(`PAID→DELIVERED`), 역행(`SHIPPING→PAID` 등).
@@ -117,7 +117,7 @@ Payment 1─1 PaymentIdempotency(key)
 | 필드 | 타입 | 설명 |
 |---|---|---|
 | id | Long (PK) | 식별자 |
-| fulfillmentId | Long (FK→Fulfillment) | 소속 이행 단위 |
+| subOrderId | Long (FK→SubOrder) | 소속 하위주문 |
 | productId | Long (FK→Product) | 참조 상품 |
 | productNameSnapshot | String | 결제 시점 상품명 스냅샷 |
 | unitPriceKrwSnapshot | long | 결제 시점 단가 스냅샷 (FR-023) |
@@ -182,6 +182,6 @@ Payment 1─1 PaymentIdempotency(key)
 
 1. `0 ≤ product.reserved ≤ product.stock` (초과 판매 불가, SC-003).
 2. 하나의 `idempotencyKey`는 최대 하나의 `Order`를 생성한다(SC-004).
-3. `Fulfillment` 상태 전이는 허용 경로만(R4).
+3. `SubOrder` 상태 전이는 허용 경로만(R4).
 4. `OrderLine`의 단가·상품명은 결제 후 불변(FR-023).
 5. 금액 필드는 모두 정수 원, 음수 불가(R7).

@@ -64,19 +64,19 @@ class Order {
   +placedAt : Instant
 }
 
-class Fulfillment {
+class SubOrder {
   +id : Long
   +orderId : Long
   +sellerId : Long
   +subtotalKrw : long
-  +status : FulfillmentStatus
+  +status : SubOrderStatus
   +shippedAt : Instant
   +deliveredAt : Instant
 }
 
 class OrderLine {
   +id : Long
-  +fulfillmentId : Long
+  +subOrderId : Long
   +productId : Long
   +productNameSnapshot : String
   +unitPriceKrwSnapshot : long
@@ -145,7 +145,7 @@ enum OrderStatus {
   COMPLETED
 }
 
-enum FulfillmentStatus {
+enum SubOrderStatus {
   PAID
   SHIPPING
   DELIVERED
@@ -170,9 +170,9 @@ Cart "1" *-- "*" CartItem : 항목
 CartItem "*" --> "1" Product : 참조 >
 
 User "1" --> "*" Order : 구매 >
-Order "1" *-- "*" Fulfillment : 이행 단위
-Fulfillment "*" --> "1" User : 담당 판매자 >
-Fulfillment "1" *-- "*" OrderLine : 라인(스냅샷)
+Order "1" *-- "*" SubOrder : 하위주문
+SubOrder "*" --> "1" User : 담당 판매자 >
+SubOrder "1" *-- "*" OrderLine : 라인(스냅샷)
 OrderLine "*" --> "1" Product : 참조 >
 
 Order "1" --> "1" Payment : 결제
@@ -186,7 +186,7 @@ Order *-- Address
 User *-- Role
 Product ..> ProductStatus
 Order ..> OrderStatus
-Fulfillment ..> FulfillmentStatus
+SubOrder ..> SubOrderStatus
 Payment ..> PaymentStatus
 StockReservation ..> ReservationStatus
 Money ..> Product : 금액 표현
