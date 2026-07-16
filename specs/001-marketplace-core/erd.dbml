@@ -1,0 +1,256 @@
+// ShopFlow — 멀티셀러 핵심 커머스 ERD (DBML)
+// 근거: specs/001-marketplace-core/data-model.md
+// dbdiagram.io 에 붙여넣어 시각화 가능.
+//
+// 규칙(ADR-0010, 추출 가능한 모듈러 모놀리스):
+//  - TableGroup = 바운디드 컨텍스트(추후 별도 인스턴스/스키마로 분리 대상).
+//  - 같은 컨텍스트 내 Ref = 실제 DB 외래키.
+//  - "[cross-context]" 표시 Ref = 컨텍스트 경계를 넘는 "논리적" 참조.
+//    분리 시 DB 외래키가 아니라 애플리케이션에서 정합성을 보장한다(조인·하드 FK 금지).
+//  - 금액은 정수 원(KRW) → bigint. (ADR-0006)
+
+Project shopflow {
+  database_type: 'PostgreSQL'
+  Note: '''
+    멀티셀러 핵심 커머스 스키마.
+    컨텍스트: 계정 / 상품 / 주문(장바구니 포함) / 결제 / 재고 / 배송.
+    컨텍스트 경계를 넘는 FK는 논리적 참조(앱 레벨)로, 분리 시 물리 FK로 두지 않는다.
+  '''
+}
+
+// ===================== 열거형 =====================
+enum role {
+  BUYER
+  SELLER
+}
+enum seller_type {
+  INDIVIDUAL       // 개인
+  SOLE_PROPRIETOR  // 개인사업자
+  CORPORATION      // 법인
+}
+enum seller_status {
+  ACTIVE
+  SUSPENDED
+}
+enum product_status {
+  ON_SALE
+  OFF_SALE
+}
+enum order_status {
+  PAID
+  PARTIALLY_SHIPPED
+  SHIPPED
+  COMPLETED
+}
+enum payment_status {
+  APPROVED
+  REJECTED
+}
+enum reservation_status {
+  HELD
+  CONFIRMED
+  RELEASED
+}
+enum delivery_status {
+  PENDING
+  SHIPPING
+  DELIVERED
+}
+
+// ===================== 계정 컨텍스트 =====================
+Table users {
+  id bigint [pk, increment]
+  email varchar(255) [unique, not null]
+  password_hash varchar(100) [not null, note: 'BCrypt 해시']
+  display_name varchar(50) [not null]
+  created_at timestamptz [not null]
+}
+
+Table user_roles {
+  user_id bigint [not null]
+  role role [not null]
+  indexes {
+    (user_id, role) [pk]
+  }
+  Note: 'User.roles(Set<Role>) 매핑 — 한 계정이 BUYER/SELLER 복수 보유(FR-004)'
+}
+
+Table sellers {
+  id bigint [pk, increment]
+  user_id bigint [unique, not null, note: '1:1']
+  seller_type seller_type [not null]
+  store_name varchar(100) [not null]
+  business_registration_number varchar(20) [note: '사업자·법인이면 필수, 형식·중복 검증']
+  representative_name varchar(50) [note: '사업자·법인이면 필수']
+  contact_phone varchar(30)
+  contact_email varchar(255)
+  status seller_status [not null, default: 'ACTIVE']
+  created_at timestamptz [not null]
+  Note: 'sellerType != INDIVIDUAL 이면 사업자등록번호·대표자 필수 (ADR-0009)'
+}
+
+// ===================== 상품 컨텍스트 =====================
+Table products {
+  id bigint [pk, increment]
+  seller_id bigint [not null, note: '[cross-context] → sellers.id']
+  name varchar(200) [not null]
+  description text
+  price_krw bigint [not null, note: '정수 원, >= 0']
+  stock int [not null, note: '>= 0']
+  reserved int [not null, default: 0, note: '0 <= reserved <= stock (초과판매 0)']
+  image_url varchar(500)
+  status product_status [not null, default: 'ON_SALE']
+  version bigint [not null, default: 0, note: '낙관적 버전(보조)']
+  indexes {
+    seller_id
+    status
+  }
+}
+
+// ===================== 주문 컨텍스트 (장바구니 포함) =====================
+Table carts {
+  id bigint [pk, increment]
+  buyer_id bigint [unique, not null, note: '[cross-context] → users.id (1인 1카트)']
+}
+
+Table cart_items {
+  id bigint [pk, increment]
+  cart_id bigint [not null]
+  product_id bigint [not null, note: '[cross-context] → products.id']
+  quantity int [not null, note: '>= 1']
+  indexes {
+    (cart_id, product_id) [unique]
+  }
+}
+
+Table orders {
+  id bigint [pk, increment]
+  buyer_id bigint [not null, note: '[cross-context] → users.id']
+  total_krw bigint [not null, note: '서버 산출 총액(정수 원)']
+  ship_recipient varchar(50) [not null]
+  ship_address varchar(300) [not null]
+  ship_phone varchar(30) [not null]
+  status order_status [not null, note: 'Delivery 상태 집계']
+  placed_at timestamptz [not null]
+  indexes {
+    buyer_id
+  }
+}
+
+Table sub_orders {
+  id bigint [pk, increment]
+  order_id bigint [not null]
+  seller_id bigint [not null, note: '[cross-context] → sellers.id']
+  subtotal_krw bigint [not null, note: '판매자별 소계 — 정산 기준']
+  indexes {
+    order_id
+    seller_id
+  }
+  Note: '판매자별 정산·주문 단위(배송상태 없음). 배송은 deliveries가 담당(ADR-0008)'
+}
+
+Table order_lines {
+  id bigint [pk, increment]
+  sub_order_id bigint [not null]
+  product_id bigint [not null, note: '[cross-context] → products.id']
+  product_name_snapshot varchar(200) [not null, note: '결제 시점 스냅샷(FR-023)']
+  unit_price_krw_snapshot bigint [not null, note: '결제 시점 단가 스냅샷']
+  quantity int [not null, note: '>= 1']
+  indexes {
+    sub_order_id
+  }
+}
+
+// ===================== 결제 컨텍스트 =====================
+Table payments {
+  id bigint [pk, increment]
+  order_id bigint [not null, note: '[cross-context] → orders.id']
+  idempotency_key varchar(64) [unique, not null, note: '서버 발급 UUID']
+  amount_krw bigint [not null, note: '서버 검증 금액']
+  status payment_status [not null]
+  gateway_ref varchar(100)
+  created_at timestamptz [not null]
+}
+
+Table payment_idempotency {
+  key varchar(64) [pk, note: '멱등키(UUID)']
+  request_hash varchar(64) [not null]
+  status varchar(20) [not null]
+  order_id bigint [note: '[cross-context] 생성된 주문(있으면)']
+  created_at timestamptz [not null]
+  Note: '동일 키 재요청 시 기존 결과 반환 — 정확히 한 번(FR-018, SC-004)'
+}
+
+// ===================== 재고 컨텍스트 =====================
+Table stock_reservations {
+  id bigint [pk, increment]
+  product_id bigint [not null, note: '[cross-context] → products.id']
+  buyer_id bigint [not null, note: '[cross-context] → users.id']
+  quantity int [not null, note: '>= 1']
+  status reservation_status [not null, default: 'HELD']
+  expires_at timestamptz [not null, note: '생성 + 10분(TTL)']
+  created_at timestamptz [not null]
+  indexes {
+    (status, expires_at) [note: '만료 스윕용']
+    product_id
+  }
+  Note: 'HELD→CONFIRMED/RELEASED. 만료 스윕이 HELD & expires_at<now 를 RELEASED (SC-005)'
+}
+
+// ===================== 배송 컨텍스트 =====================
+Table deliveries {
+  id bigint [pk, increment]
+  sub_order_id bigint [unique, not null, note: '[cross-context] → sub_orders.id (1:1)']
+  status delivery_status [not null, default: 'PENDING']
+  shipped_at timestamptz
+  delivered_at timestamptz [note: '배송완료 시각 — 향후 정산 트리거']
+  Note: '결제 완료 시 SubOrder마다 PENDING 생성. PENDING→SHIPPING→DELIVERED(FR-011)'
+}
+
+// ===================== 관계 =====================
+// --- 같은 컨텍스트 내 (실제 외래키) ---
+Ref: user_roles.user_id > users.id
+Ref: sellers.user_id > users.id                 // 1:1 (user_id UNIQUE)
+Ref: cart_items.cart_id > carts.id
+Ref: sub_orders.order_id > orders.id
+Ref: order_lines.sub_order_id > sub_orders.id
+Ref: payments.idempotency_key > payment_idempotency.key
+
+// --- 컨텍스트 경계를 넘는 논리적 참조 (분리 시 물리 FK 아님) ---
+Ref: products.seller_id > sellers.id            // 상품 → 계정
+Ref: carts.buyer_id > users.id                  // 주문 → 계정 (buyer_id UNIQUE)
+Ref: orders.buyer_id > users.id                 // 주문 → 계정
+Ref: sub_orders.seller_id > sellers.id          // 주문 → 계정
+Ref: cart_items.product_id > products.id        // 주문 → 상품
+Ref: order_lines.product_id > products.id       // 주문 → 상품
+Ref: payments.order_id > orders.id              // 결제 → 주문
+Ref: stock_reservations.product_id > products.id // 재고 → 상품
+Ref: stock_reservations.buyer_id > users.id     // 재고 → 계정
+Ref: deliveries.sub_order_id > sub_orders.id    // 배송 → 주문 (1:1, sub_order_id UNIQUE)
+
+// ===================== 컨텍스트 그룹 =====================
+TableGroup "계정 (Account)" {
+  users
+  user_roles
+  sellers
+}
+TableGroup "상품 (Product)" {
+  products
+}
+TableGroup "주문 (Order) — 장바구니 포함" {
+  carts
+  cart_items
+  orders
+  sub_orders
+  order_lines
+}
+TableGroup "결제 (Payment)" {
+  payments
+  payment_idempotency
+}
+TableGroup "재고 (Inventory)" {
+  stock_reservations
+}
+TableGroup "배송 (Delivery)" {
+  deliveries
+}
