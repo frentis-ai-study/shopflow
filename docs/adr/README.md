@@ -24,7 +24,7 @@
 | [0007](./0007-issue-branch-pr-workflow.md) | 이슈 → 브랜치 → PR 워크플로 강제 | 수용 | VIII |
 | [0008](./0008-delivery-bounded-context.md) | 배송을 별도 바운디드 컨텍스트(Delivery)로 분리 | 수용 | V, VII |
 | [0009](./0009-seller-profile-model.md) | 판매자 프로필과 사업자 유형 모델링 | 수용 | VII |
-| [0010](./0010-extraction-ready-modular-monolith.md) | 추출 가능한 모듈러 모놀리스(목표: 컨텍스트별 별도 인스턴스) | 수용 | V |
+| [0010](./0010-extraction-ready-modular-monolith.md) | 모듈러 모놀리스 확정(백엔드 인스턴스 분리 Non-goal, 프론트만 별도) | 수용(v2) | V |
 | [0011](./0011-rest-repository-backend-and-frontend-mvc.md) | REST 리포지토리 백엔드 + 프론트 제어 MVC 레이어 분리 | 수용 | II, V |
 
 ## 미결정 → 해소됨

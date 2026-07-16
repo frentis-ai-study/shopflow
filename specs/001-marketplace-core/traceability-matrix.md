@@ -1,115 +1,133 @@
 # 추적 매트릭스 (Traceability Matrix) — 멀티셀러 핵심 커머스
 
-**기능**: [spec.md](./spec.md) · **관련 이슈**: #2 · **작성일**: 2026-07-16
+**기능**: [spec.md](./spec.md) · **관련 이슈**: #2 · **최종 갱신**: 2026-07-16(v2, 리뷰 반영)
 
 요구사항(FR)·성공기준(SC)부터 사용자 스토리·유즈케이스·설계(엔티티/계약/ADR)·태스크·검증까지
 양방향으로 추적하는 단일 뷰. 커버리지 점검과 변경 영향 분석의 기준(SSOT)으로 쓴다.
 
-**참조 문서**: [spec.md](./spec.md) · [usecases.md](./usecases.md) · [data-model.md](./data-model.md)
-· [contracts/](./contracts/) · [plan.md](./plan.md) · [research.md](./research.md)
-· [tasks.md](./tasks.md) · [ADR](../../docs/adr/README.md)
+**개발 순서(ADR-0010 v2)**: 백엔드 서비스(Part A) 먼저 → 외부 디자인 완료 후 프론트엔드
+인스턴스(Part B). 태스크 ID는 [tasks.md](./tasks.md) 기준. `[FE]`는 Part B(디자인 후) 화면.
 
-범례: US=사용자스토리, UC=유즈케이스, FR=기능요구사항, SC=성공기준, T###=태스크.
+**참조**: [spec.md](./spec.md) · [usecases.md](./usecases.md) · [data-model.md](./data-model.md)
+· [contracts/](./contracts/) · [tasks.md](./tasks.md) · [ADR](../../docs/adr/README.md)
+· [검토 보고서](./reviews/2026-07-16-negative-review.md)
 
 ---
 
 ## 1. 기능 요구사항(FR) → 태스크 추적
 
-| FR | 요약 | US | UC | 핵심 엔티티/계약 | ADR | 구현 태스크 | 검증(테스트·SC) |
-|---|---|---|---|---|---|---|---|
-| FR-001 | 계정 생성 | US3 | UC-01 | User | — | T020, T022, T023, T025 | T017 |
-| FR-002 | 이메일 형식·중복 검증 | US3 | UC-01 | User | — | T023 | T017 |
-| FR-003 | 로그인/로그아웃 | US3 | UC-02 | User | — | T024, T026 | T019 |
-| FR-004 | 구매자·판매자 복수 역할 | US3 | UC-01/02 | User, Role, Seller | 0009 | T020, T021, T023 | T018 |
-| FR-005 | 보호 작업 인증·권한 강제 | US3(전역) | UC-02/05/09 | SecurityConfig | 0011 | T012, T024 | T019 |
-| FR-006 | 상품 등록 | US2 | UC-05 | Product | — | T030, T031, T032, T034 | T028 |
-| FR-007 | 상품 정보 수정 | US2 | UC-06 | Product | — | T032 | T028 |
-| FR-008 | 판매중/판매중지 전환 | US2 | UC-07 | Product, ProductStatus | — | T033, T036 | T028 |
-| FR-009 | 판매자 소유 자원만 접근 | US2/US4 | UC-06/07/11/12 | Product, SubOrder | — | T032, T065 | T029, T062 (SC-007) |
-| FR-010 | 판매자 주문(하위주문) 조회 | US4 | UC-11 | SubOrder | 0005 | T064, T067 | T062 |
-| FR-011 | 배송 상태 전이 | US4 | UC-12 | Delivery, DeliveryStatus | 0008 | T064, T065 | T061 |
-| FR-012 | 판매중 상품 탐색·검색 | US2 | UC-03 | Product | — | T035, T036 | T029 |
-| FR-013 | 상품 상세 조회 | US2 | UC-04 | Product | — | T035 | T029 |
-| FR-014 | 장바구니 담기·수정 | US1 | UC-08 | Cart, CartItem | — | T046, T047, T048 | — |
-| FR-015 | 배송지 입력·결제 진행 | US1 | UC-09 | Order, Address | — | T058, T059 | T041 |
-| FR-016 | 내 주문 목록·상태 조회 | US5 | UC-10 | Order | — | T070, T071 | T068 |
-| FR-017 | 재고 선점 + TTL 10분 자동 해제 | US1 | UC-09 | StockReservation | 0004 | T049, T050, T051 | T037, T045 (SC-005) |
-| FR-018 | 멱등 결제(정확히 1회) | US1 | UC-09 | Payment, PaymentIdempotency | 0003 | T052, T054 | T038, T043 (SC-004) |
-| FR-019 | 서버측 금액 검증 | US1 | UC-09 | CheckoutService | 0002 | T058 | T040 |
-| FR-020 | 초과 판매 방지 | US1 | UC-09 | StockReservation | 0004 | T050 | T037, T042 (SC-003) |
-| FR-021 | 판매자별 하위주문 분리 | US1 | UC-09 | SubOrder, OrderLine | 0005 | T055, T056 | T039 |
-| FR-022 | 주문 상태·전이 감사 기록 | US1/US4 | UC-09/12 | OrderStatus, Delivery | 0008 | T056, T057, T066, T072 | T063 |
-| FR-023 | 결제 시점 가격·상품 스냅샷 불변 | US1 | UC-06/09 | OrderLine | — | T056 | T039 |
-| FR-024 | 카드 미저장·외부 위임(모의) | US1 | UC-09 | PaymentGateway | 0002 | T053 | T040 |
-| FR-025 | 배송 전 주문 취소 이번 범위 제외 | — | — | — | — | (범위 밖) | 명시적 제외 |
+| FR | 요약 | US | UC | 핵심 엔티티/계약 | ADR | 백엔드 구현 | 검증 | 화면(FE) |
+|---|---|---|---|---|---|---|---|---|
+| FR-001 | 계정 생성 | US3 | UC-01 | User | — | T019, T021, T022 | T016 | T072 |
+| FR-002 | 이메일 형식·중복 검증 | US3 | UC-01 | User | — | T022 | T016 | T072 |
+| FR-003 | 로그인/로그아웃 | US3 | UC-02 | User, SecurityConfig | 0011 | T023 | T018 | T072 |
+| FR-004 | 구매자·판매자 복수 역할 | US3 | UC-01/02 | User, Role, Seller | 0009 | T019, T020, T022 | T017 | — |
+| FR-005 | 보호 작업 인증·권한 강제 | US3(전역) | UC-02/05/09 | SecurityConfig | 0011 | T013, T023 | T018 (SC-007) | — |
+| FR-006 | 상품 등록 | US2 | UC-05 | Product | — | T027, T028, T030 | T025 | T074 |
+| FR-007 | 상품 정보 수정 | US2 | UC-06 | Product | — | T029, T030 | T025 | T074 |
+| FR-008 | 판매중/판매중지 전환 | US2 | UC-07 | Product, ProductStatus | — | T030 | T031 | T074 |
+| FR-009 | 판매자 소유 자원만 접근 | US2/US4 | UC-06/07/11/12 | Product, SubOrder | 0011 | T029, T030, T057 | T026, T054 (SC-007) | — |
+| FR-010 | 판매자 주문(하위주문) 조회 | US4 | UC-11 | SubOrder | 0005 | T056, T061 | T054 | T076 |
+| FR-011 | 배송 상태 전이 | US4 | UC-12 | Delivery, DeliveryStatus | 0008 | T056, T057 | T053 | T076 |
+| FR-012 | 판매중 상품 탐색·검색 | US2 | UC-03 | Product | — | T028 | T026 | T073 |
+| FR-013 | 상품 상세 조회 | US2 | UC-04 | Product | — | T028 | T026 | T073 |
+| FR-014 | 장바구니 담기·수정 | US1 | UC-08 | Cart, CartItem | — | T040, T041 | **T034** | T075 |
+| FR-015 | 배송지 입력·결제 진행 | US1 | UC-09 | Order, Address | — | T051 | T035 | T075 |
+| FR-016 | 내 주문 목록·상태 조회 | US5 | UC-10 | Order | — | T061 | T059 | T077 |
+| FR-017 | 재고 선점 + TTL 10분 자동 해제 | US1 | UC-09 | StockReservation | 0004 | T042, T043, T044 | T039 (SC-005) | T075 |
+| FR-018 | 멱등 결제(정확히 1회) | US1 | UC-09 | Payment, PaymentIdempotency | 0003 | T045, T047 | T037 (SC-004) | — |
+| FR-019 | 서버측 금액 검증 | US1 | UC-09 | CheckoutService | 0002 | T051 | **T035**(금액 변조 거부 포함) | — |
+| FR-020 | 초과 판매 방지 | US1 | UC-09 | StockReservation | 0004 | T043 | T036 (SC-003) | — |
+| FR-021 | 판매자별 하위주문 분리 | US1 | UC-09 | SubOrder, OrderLine | 0005 | T048, T049 | T032 | — |
+| FR-022 | 주문 상태·전이 감사 기록 | US1/US4 | UC-09/12 | OrderStatus, Delivery | 0008 | T049, T050, T058, T062 | T055 | — |
+| FR-023 | 결제 시점 가격·상품 스냅샷 불변 | US1 | UC-06/09 | OrderLine | — | T048, T049 | T032 | — |
+| FR-024 | 카드 미저장·외부 위임(모의) | US1 | UC-09 | PaymentGateway | 0002 | T046 | T033 | — |
+| FR-025 | 배송 전 주문 취소 이번 범위 제외 | — | — | — | — | (범위 밖) | 명시적 제외 | — |
+
+> **정정(v2)**: FR-014는 CartService 단위테스트(T034)로 검증 추가(이전 "—" → 헌장 원칙 I 위반
+> 해소). FR-019는 MockGatewayTest(구) 오매핑 → 체크아웃 통합테스트(T035)에서 클라이언트 금액
+> 변조 거부를 검증하도록 정정.
 
 ## 2. 성공 기준(SC) → 검증 추적
 
-| SC | 측정 목표 | US | 관련 FR | 검증 태스크 |
-|---|---|---|---|---|
-| SC-001 | 상품→결제 3분 이내 | US1 | FR-015 | T041, T059, T076 |
-| SC-002 | 상품 등록 5분 이내 노출 | US2 | FR-006 | T034, T076 |
-| SC-003 | 동시 결제 초과판매 0 | US1 | FR-020 | T037, T042 |
-| SC-004 | 중복 요청 이중결제 0 | US1 | FR-018 | T038, T043 |
-| SC-005 | 미결제 선점 TTL 후 100% 복원 | US1 | FR-017 | T045 |
-| SC-006 | 조회 상태와 실제 상태 일치 | US4/US5 | FR-022 | T063, T068 |
-| SC-007 | 권한 없는 접근 100% 차단 | US3/US2/US4 | FR-005/009 | T019, T029, T062 |
+| SC | 측정 목표 | US | 관련 FR | 검증 태스크 | 비고 |
+|---|---|---|---|---|---|
+| SC-001 | 상품→결제 3분 이내 | US1 | FR-015 | T035, T075 | 기능 검증(통합); **시간 목표는 수동/성능 측정** |
+| SC-002 | 상품 등록 5분 이내 노출 | US2 | FR-006 | T031, T074 | 기능 검증; 시간은 수동 측정 |
+| SC-003 | 동시 결제 초과판매 0 | US1 | FR-020 | T036, T043 | Testcontainers 동시성 |
+| SC-004 | 중복 요청 이중결제 0 | US1 | FR-018 | T037, T047 | 동시·재시도 |
+| SC-005 | 미결제 선점 TTL 후 100% 복원 | US1 | FR-017 | T039, T044 | Clock 조작 |
+| SC-006 | 조회 상태와 실제 상태 일치 | US4/US5 | FR-022 | T055, T060 | |
+| SC-007 | 권한 없는 접근 100% 차단 | US3/US2/US4 | FR-005/009 | T018, T026, T054 | |
+
+> **정정(v2)**: SC-001/002는 시간 UX 지표로, 기능 통과 테스트만으로는 시간을 측정하지 않는다 →
+> "수동/성능 측정" 명시.
 
 ## 3. 사용자 스토리 → 페이즈·태스크
 
-| US | 제목 | 우선순위 | 페이즈 | 태스크 범위 | 관련 FR |
-|---|---|---|---|---|---|
-| US3 | 가입·로그인 | P1 | Phase 3 | T017–T027 | FR-001~005 |
-| US2 | 상품 등록·재고 | P1 | Phase 4 | T028–T036 | FR-006~009, 012, 013 |
-| US1 | 구매자 결제 ⭐ | P1 | Phase 5 | T037–T060 | FR-014~024 |
-| US4 | 판매자 배송 | P2 | Phase 6 | T061–T067 | FR-009~011, 022 |
-| US5 | 내 주문 조회 | P2 | Phase 7 | T068–T071 | FR-016, 022 |
+| US | 제목 | 우선순위 | 백엔드 페이즈 | 백엔드 태스크 | 화면(FE) | 관련 FR |
+|---|---|---|---|---|---|---|
+| US3 | 가입·로그인 | P1 | Phase 3(BE) | T016–T024 | T072 | FR-001~005 |
+| US2 | 상품 등록·재고 | P1 | Phase 4(BE) | T025–T031 | T073, T074 | FR-006~009, 012, 013 |
+| US1 | 구매자 결제 ⭐ | P1 | Phase 5(BE) | T032–T052 | T075 | FR-014~024 |
+| US4 | 판매자 배송 | P2 | Phase 6(BE) | T053–T058 | T076 | FR-009~011, 022 |
+| US5 | 내 주문 조회 | P2 | Phase 7(BE) | T059–T061 | T077 | FR-016, 022 |
 
-> Setup(T001–T006)·Foundational(T007–T016)·Polish(T072–T078)는 전 스토리 공통.
+> 공통: Setup(T001–T006)·Foundational(T007–T015)·백엔드 Polish(T062–T069)·프론트 공통
+> (T070, T071, T078)은 전 스토리 공통.
 
 ## 4. ADR → 반영 위치
 
 | ADR | 결정 | 반영 태스크/산출물 |
 |---|---|---|
-| 0001 | 서버사이드 렌더링(Spring Boot+Thymeleaf) | plan, T015, webmvc/* |
-| 0002 | 결제 외부 위임 + 모의 게이트웨이 | FR-019/024, T053 |
-| 0003 | 멱등키 정확히 1회 | FR-018, T052, T054 |
-| 0004 | 재고 선점 + TTL | FR-017/020, T049–T051 |
-| 0005 | 판매자별 하위주문 분리 | FR-021, T055, T056 |
+| 0001 | 서버사이드 렌더링(Thymeleaf) | plan, Part B(T071–T077) |
+| 0002 | 결제 외부 위임 + 모의 게이트웨이 | FR-019/024, T046 |
+| 0003 | 멱등키 정확히 1회 | FR-018, T045, T047 |
+| 0004 | 재고 선점 + TTL(조건부 UPDATE 확정) | FR-017/020, T042–T044 |
+| 0005 | 판매자별 하위주문 분리 | FR-021, T048, T049 |
 | 0006 | 금액 고정소수점 | T008(Money) |
 | 0007 | 이슈→브랜치→PR 워크플로 | 이슈 #2, PR 절차 |
-| 0008 | 배송 별도 컨텍스트(Delivery) | FR-011/022, T057, T064 |
-| 0009 | 판매자 프로필·사업자 유형 | FR-004, T021, T023 |
-| 0010 | 추출 가능 모듈러 모놀리스 | plan 구조, ERD 경계 |
-| 0011 | REST 리포지토리 + 프론트 제어 MVC | plan, C4, T013–T015, *Repository/*OpsController |
+| 0008 | 배송 별도 컨텍스트(Delivery) | FR-011/022, T050, T056 |
+| 0009 | 판매자 프로필·사업자 유형 | FR-004, T020, T022 |
+| 0010 v2 | 모듈러 모놀리스 확정(백엔드 분리 Non-goal, 프론트만 별도) | tasks Part A/B 분리, plan 구조 |
+| 0011 | REST 리포지토리 + 프론트 제어 MVC | plan, T014, T030/T057(커스텀 REST), Part B |
 
-## 5. 유즈케이스 → 계약(HTTP) → 태스크
+## 5. 유즈케이스 → 백엔드 REST → 태스크
 
-| UC | HTTP 계약(대표) | 태스크 |
-|---|---|---|
-| UC-01 회원가입 | POST /signup | T025 |
-| UC-02 로그인 | POST /login, /logout | T024, T026 |
-| UC-03 탐색·검색 | GET /products?q= | T035 |
-| UC-04 상세 | GET /products/{id} | T035 |
-| UC-05 상품 등록 | POST /seller/products | T034 |
-| UC-06 상품 수정 | POST /seller/products/{id} | T034 |
-| UC-07 판매 상태 | POST /seller/products/{id}/status | T033 |
-| UC-08 장바구니 | POST /cart/items | T048 |
-| UC-09 결제 | GET/POST /checkout | T058, T059 |
-| UC-10 내 주문 | GET /orders, /orders/{id} | T071 |
-| UC-11 판매자 주문 | GET /seller/orders | T067 |
-| UC-12 배송 전이 | POST /seller/orders/{subOrderId}/ship,deliver | T065 |
+| UC | 백엔드 엔드포인트(계약 T066에서 확정) | 백엔드 태스크 | 화면(FE) |
+|---|---|---|---|
+| UC-01 회원가입 | POST /api/signup | T022 | T072 |
+| UC-02 로그인 | POST /login | T023 | T072 |
+| UC-03 탐색·검색 | GET /api/products?q= | T028 | T073 |
+| UC-04 상세 | GET /api/products/{id} | T028 | T073 |
+| UC-05 상품 등록 | POST /api/seller/products | T030 | T074 |
+| UC-06 상품 수정 | PUT /api/seller/products/{id} | T030 | T074 |
+| UC-07 판매 상태 | POST /api/seller/products/{id}/status | T030 | T074 |
+| UC-08 장바구니 | POST /api/cart/items | T041 | T075 |
+| UC-09 결제 | POST /api/checkout | T051 | T075 |
+| UC-10 내 주문 | GET /api/orders, /api/orders/{id} | T061 | T077 |
+| UC-11 판매자 주문 | GET /api/seller/orders | T056, T061 | T076 |
+| UC-12 배송 전이 | POST /api/seller/orders/{subOrderId}/ship,deliver | T057 | T076 |
 
-## 6. 커버리지 요약
+> 실제 URL·페이로드는 백엔드 REST 계약(T066, `contracts/rest-api.md`)에서 확정. 프론트 SSR
+> 경로와 충돌 방지를 위해 백엔드는 `/api` base-path 사용(ADR-0011).
 
-- **FR 커버리지**: FR-001~024 전부 태스크로 매핑됨. FR-025는 명시적 범위 밖(취소·환불 후속).
-- **SC 커버리지**: SC-001~007 전부 검증 태스크 존재.
-- **UC 커버리지**: UC-01~12 전부 계약·태스크로 매핑됨.
-- **미커버(의도된 범위 밖)**: 정산·수수료 공제, 환불·회수, 주문 취소 → 후속 이슈.
-- **갭 점검**: 없음(현 범위 기준). 신규 요구사항 추가 시 이 표에 행을 추가하고 태스크를 연결한다.
+## 6. 커버리지 요약 (v2, 정직 기재)
+
+- **FR**: FR-001~024 전부 백엔드 태스크·검증 매핑. FR-025는 의도된 범위 밖.
+- **SC**: SC-003~007은 통합 테스트로 검증. **SC-001/002는 기능 검증만, 시간 지표는 수동 측정**
+  (자동 성능 측정 태스크 없음 — 알려진 한계).
+- **UC**: UC-01~12 전부 백엔드 태스크·계약 매핑, 화면은 Part B.
+- **알려진 갭(검토 보고서 기준, 이번 범위 미해결)**:
+  - 결제 이후 도메인(취소·환불·정산·수수료) 부재 — 제품 범위 결정 대기(계층 3).
+  - 영속 감사 원장 테이블 부재 — T062는 로깅까지, 원장 테이블은 계층 2 후속.
+  - 멱등 경합 창·백엔드 REST 계약 세부·인증 전파 — T047/T066에 반영하되 세부 설계 보강 필요.
+  - 알림·배송 추적·리뷰·검색 고도화·판매자 대시보드 — 범위 밖(후속).
+- **결론**: 현 범위(FR 기준) 커버리지는 완전하나, **제품·무결성 관점 갭이 존재**하며 위 목록으로
+  추적한다(이전 "갭 없음" 표기 철회).
 
 ## 7. 유지 규칙
 
-- 요구사항·태스크·ADR이 바뀌면 이 매트릭스를 함께 갱신한다(변경 영향 분석의 기준).
-- 새 FR/SC → US·UC·엔티티·ADR·태스크·검증을 채운 뒤에만 구현에 착수한다.
-- `/speckit-analyze` 로 spec·plan·tasks 정합성을 교차 점검할 때 이 표를 대조 기준으로 쓴다.
+- 요구사항·태스크·ADR이 바뀌면 이 매트릭스를 함께 갱신한다(변경 영향 분석 기준).
+- 새 FR/SC → US·UC·엔티티·ADR·태스크·검증을 채운 뒤에만 구현 착수.
+- `/speckit-analyze` 로 spec·plan·tasks 정합성 교차 점검 시 이 표를 대조 기준으로 쓴다.

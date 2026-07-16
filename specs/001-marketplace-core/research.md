@@ -125,7 +125,7 @@
 | 동시성 제어 | 원자적 조건부 UPDATE(행 잠금 암묵), 트랜잭션 내 |
 | TTL 처리 | 스케줄 스윕(60초) + 지연 판정 |
 | 멱등 | 서버 발급 UUID + `payment_idempotency` 유니크 제약 |
-| 상태 기계 | 하위주문 PAID→SHIPPING→DELIVERED, 주문은 집계 |
+| 상태 기계 | 배송(Delivery) PENDING→SHIPPING→DELIVERED, SubOrder 무상태, 주문은 Delivery 집계 |
 | 결제 | `PaymentGateway` 어댑터 + `MockPaymentGateway` |
 | 인증 | Spring Security 세션 + BCrypt + CSRF |
 | 금액 | 정수 원(long) / `Money` 값객체 |
