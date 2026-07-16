@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: common('내 주문')}"></head>
+<body>
+<div class="page-shell">
+  <nav th:replace="~{fragments/nav :: nav}"></nav>
+  <div class="container">
+    <div class="serif" style="font-size:30px;margin-bottom:24px">내 주문</div>
+    <div th:if="${#lists.isEmpty(orders)}" class="empty-state">아직 주문 내역이 없어요.</div>
+    <div style="display:flex;flex-direction:column;gap:18px">
+      <div class="card" th:each="o : ${orders}" style="padding:22px 24px;display:flex;flex-direction:column;gap:14px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;flex-direction:column;gap:3px">
+            <span class="mono" style="font-size:12px;color:var(--text-muted)" th:text="'ORD-' + ${o.id}"></span>
+          </div>
+          <span th:class="'chip chip-' + ${o.status}" th:text="${o.status}"></span>
+        </div>
+        <hr class="divider"/>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:600" th:text="${#numbers.formatInteger(o.totalKrw,1,'COMMA')} + '원'"></div>
+          <a th:href="@{/orders/{id}(id=${o.id})}" style="font-size:12.5px">상세 보기 →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: common('결제 완료')}"></head>
+<body>
+<div class="page-shell">
+  <nav th:replace="~{fragments/nav :: nav}"></nav>
+  <div style="padding:60px 40px;display:flex;justify-content:center">
+    <div style="width:520px;display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center">
+      <div class="check-badge">✓</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="serif" style="font-size:30px">결제가 완료되었어요</div>
+        <div class="muted" style="font-size:14px">주문이 접수되었고 재고가 확정 차감되었습니다.</div>
+      </div>
+      <div class="card" style="width:100%;padding:20px 22px;display:flex;flex-direction:column;gap:12px;text-align:left">
+        <div style="display:flex;justify-content:space-between;font-size:13px">
+          <span class="muted">주문번호</span><span class="mono" th:text="'ORD-' + ${order.id}"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px">
+          <span class="muted">결제 금액</span>
+          <span style="font-weight:600" th:text="${#numbers.formatInteger(order.totalKrw,1,'COMMA')} + '원'"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px">
+          <span class="muted">하위주문</span>
+          <span th:text="'판매자 ' + ${#lists.size(order.subOrders)} + '곳으로 분리'"></span>
+        </div>
+      </div>
+      <div class="btn-row" style="width:100%">
+        <a th:href="@{/orders/{id}(id=${order.id})}" class="btn btn-primary">주문 상세 보기</a>
+        <a th:href="@{/products}" class="btn btn-secondary">쇼핑 계속하기</a>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

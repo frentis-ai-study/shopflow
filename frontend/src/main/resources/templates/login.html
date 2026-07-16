@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: common('로그인')}"></head>
+<body>
+<div class="page-shell">
+  <nav th:replace="~{fragments/nav :: nav}"></nav>
+  <div class="container-narrow" style="padding-top:64px">
+    <div style="text-align:center;display:flex;flex-direction:column;gap:8px;margin-bottom:24px">
+      <div class="serif" style="font-size:30px">로그인</div>
+      <div class="muted" style="font-size:13.5px">결제하려면 로그인이 필요해요</div>
+    </div>
+    <div th:if="${info}" class="info-banner" style="margin-bottom:14px" th:text="${info}"></div>
+    <div th:if="${errorMessage}" class="form-error" th:text="${errorMessage}"></div>
+    <form th:action="@{/login}" method="post">
+      <input type="hidden" name="next" th:value="${next}"/>
+      <div class="form-field">
+        <label>이메일</label>
+        <input type="email" name="email" th:value="${email}" required autofocus/>
+      </div>
+      <div class="form-field">
+        <label>비밀번호</label>
+        <input type="password" name="password" required/>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%">로그인</button>
+    </form>
+    <div style="text-align:center;font-size:13px;margin-top:16px" class="muted">
+      계정이 없으신가요? <a th:href="@{/signup}">회원가입</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

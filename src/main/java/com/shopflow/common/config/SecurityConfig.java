@@ -6,7 +6,9 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 
 /**
  * 보안 설정(원칙 II). 비밀번호는 BCrypt로 해시한다.
@@ -50,8 +52,15 @@ public class SecurityConfig {
                 // 쿠키 기반 CSRF(HttpOnly=false로 프론트 JS가 읽어 X-XSRF-TOKEN 헤더로 재전송).
                 // /login·/api/signup은 아직 보호할 인증 세션이 없는 진입점이라 CSRF에서 제외한다
                 // (세션 이전 상태 — 실질적 위협 없음). 그 외 인증된 상태변경 API는 그대로 보호.
+                // requestHandler를 non-Xor로 지정 + CsrfCookieFilter로 매 요청 즉시 해석해야
+                // XSRF-TOKEN 쿠키가 실제로 응답에 실린다(BREACH 보호로 인한 기본 지연 해석 우회).
+                // UsernamePasswordAuthenticationFilter는 인증 성공 시 체인을 종료하고 이후
+                // 필터를 호출하지 않으므로, CsrfCookieFilter는 그 앞에 둬야 /login 응답에도
+                // 쿠키가 실린다.
                 .csrf(csrf -> csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                        .ignoringRequestMatchers("/login", "/api/signup"));
+                        .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
+                        .ignoringRequestMatchers("/login", "/api/signup"))
+                .addFilterBefore(new CsrfCookieFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

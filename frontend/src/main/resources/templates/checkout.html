@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: common('결제')}"></head>
+<body>
+<div class="page-shell">
+  <nav th:replace="~{fragments/nav :: nav}"></nav>
+  <div class="container">
+    <div class="muted" style="font-size:13px;margin-bottom:6px">1 장바구니 — <span style="color:var(--text-primary)">2 결제</span> — 3 완료</div>
+    <div class="serif" style="font-size:30px;margin-bottom:24px">결제</div>
+
+    <div th:if="${errorMessage}" class="form-error" th:text="${errorMessage}" style="margin-bottom:16px"></div>
+
+    <form th:action="@{/checkout}" method="post">
+      <input type="hidden" name="idempotencyKey" th:value="${idempotencyKey}"/>
+      <div style="display:grid;grid-template-columns:1fr 360px;gap:40px;align-items:start">
+        <div style="display:flex;flex-direction:column;gap:28px">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="section-label">배송지</div>
+            <div class="form-grid-2">
+              <div class="form-field"><label>수령인</label><input type="text" name="recipient" required/></div>
+              <div class="form-field"><label>연락처</label><input type="text" name="phone" required/></div>
+              <div class="form-field" style="grid-column:1/3"><label>주소</label><input type="text" name="address" required/></div>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="section-label">결제 수단</div>
+            <div style="padding:16px;border:1.5px solid var(--text-primary);background:#fff;font-size:14px;display:flex;align-items:center;gap:10px">
+              <span style="width:16px;height:16px;border-radius:999px;border:5px solid var(--text-primary)"></span>모의 결제 (카드)
+            </div>
+            <div class="info-banner">
+              <span>🔒</span>
+              <span>카드 원본 정보는 저장하지 않고 PSP에 위임합니다. 이번 범위는 모의 게이트웨이로 처리됩니다.</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="card-strong" style="padding:26px 24px;display:flex;flex-direction:column;gap:14px">
+            <div class="section-label">서버 검증 금액</div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px;color:var(--text-secondary)">
+              <span>상품 합계(추정)</span><span th:text="${#numbers.formatInteger(cartTotal,1,'COMMA')} + '원'"></span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13.5px;color:var(--text-secondary)">
+              <span>배송비</span><span>0원</span>
+            </div>
+            <hr class="divider"/>
+            <div style="display:flex;justify-content:space-between;align-items:baseline">
+              <span style="font-size:14px">결제 예상 금액</span>
+              <span style="font-size:22px;font-weight:600" th:text="${#numbers.formatInteger(cartTotal,1,'COMMA')} + '원'"></span>
+            </div>
+            <button type="submit" class="btn btn-primary" th:text="${#numbers.formatInteger(cartTotal,1,'COMMA')} + '원 결제'"></button>
+          </div>
+          <div style="border:1px dashed var(--accent);background:var(--accent-bg);padding:16px 18px;display:flex;flex-direction:column;gap:8px">
+            <div style="font:600 11px ui-monospace,monospace;color:var(--accent)">HIDDEN · idempotencyKey</div>
+            <div class="mono" style="font-size:12px;color:var(--text-secondary);word-break:break-all;background:#fff;border:1px solid var(--accent-border);padding:8px 10px" th:text="${idempotencyKey}"></div>
+            <div class="faint" style="font-size:11.5px;line-height:1.55">서버 발급 멱등키. 재시도가 겹쳐도 결제·주문은 정확히 한 번만.</div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+</body>
+</html>

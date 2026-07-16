@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: common(product != null ? product.name : '상품')}"></head>
+<body>
+<div class="page-shell">
+  <nav th:replace="~{fragments/nav :: nav}"></nav>
+
+  <div th:if="${errorMessage}" class="container"><div class="info-banner" th:text="${errorMessage}"></div></div>
+
+  <div th:if="${product}">
+    <div style="padding:14px 32px;font-size:12.5px;color:var(--text-muted)">
+      <a th:href="@{/products}">전체</a> · <span th:text="'판매자 #' + ${product.sellerId}"></span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr">
+      <div style="position:relative;border-right:1px solid var(--border-light)">
+        <div class="product-thumb" style="border-radius:0">
+          <img th:if="${product.imageUrl}" th:src="${product.imageUrl}" th:alt="${product.name}"/>
+        </div>
+      </div>
+      <div style="padding:48px 44px;display:flex;flex-direction:column;gap:20px">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="muted" style="font-size:12.5px">판매자 #<span th:text="${product.sellerId}"></span></div>
+          <div class="serif" style="font-size:30px;line-height:1.15" th:text="${product.name}"></div>
+          <div class="muted" style="font-size:14.5px;line-height:1.7" th:text="${product.description}"></div>
+        </div>
+        <div style="font-size:25px;font-weight:600" th:text="${#numbers.formatInteger(product.priceKrw,1,'COMMA')} + '원'"></div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:13px">
+          <span th:if="${product.inStock}" style="width:7px;height:7px;border-radius:999px;background:var(--success)"></span>
+          <span th:if="${product.inStock}" style="color:var(--success)">재고 있음</span>
+          <span th:unless="${product.inStock}" style="color:#B23A2E">품절</span>
+        </div>
+        <hr class="divider"/>
+
+        <form th:action="@{/cart/items}" method="post" style="display:flex;flex-direction:column;gap:16px" th:if="${product.inStock}">
+          <input type="hidden" name="productId" th:value="${product.id}"/>
+          <div style="display:flex;align-items:center;gap:10px">
+            <label class="muted" style="font-size:13px">수량</label>
+            <input type="number" name="quantity" value="1" min="1"
+                   style="width:80px;padding:10px 12px;border:1px solid var(--border);font-size:14px"/>
+          </div>
+          <div class="btn-row">
+            <button type="submit" class="btn btn-primary">장바구니 담기</button>
+          </div>
+        </form>
+
+        <div class="info-banner">
+          <span>ⓘ</span>
+          <span>판매자별로 배송·정산이 분리됩니다. 여러 판매자 상품을 함께 담아도 한 번에 결제할 수 있어요.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

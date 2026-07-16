@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: common('판매자 센터')}"></head>
+<body>
+<div class="page-shell">
+  <nav th:replace="~{fragments/nav :: nav}"></nav>
+  <div class="container">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
+      <div class="serif" style="font-size:30px">판매자 센터</div>
+      <span style="font-size:11px;padding:3px 9px;border-radius:999px;background:var(--text-primary);color:var(--bg-surface)">주문·배송</span>
+    </div>
+    <div th:replace="~{fragments/seller-subnav :: subnav}"></div>
+    <div class="faint" style="font-size:12px;margin-bottom:20px">
+      허용 전이만 가능(배송대기→배송중→배송완료) · 배송완료는 향후 정산 트리거로 기록됩니다.
+    </div>
+
+    <div th:if="${#lists.isEmpty(subOrders)}" class="empty-state">아직 배정된 주문이 없어요.</div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card" th:each="s : ${subOrders}" style="padding:20px 22px;display:flex;align-items:center;gap:18px">
+        <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+          <div style="font-size:13.5px">
+            <span th:text="${s.lines[0].productName}"></span>
+            <span th:if="${#lists.size(s.lines) > 1}" th:text="' 외 ' + (${#lists.size(s.lines)} - 1) + '건'"></span>
+          </div>
+          <div class="mono faint" style="font-size:11px" th:text="'SUB-' + ${s.subOrderId} + ' · ORD-' + ${s.orderId}"></div>
+          <div class="muted" style="font-size:12px" th:text="'소계 ' + ${#numbers.formatInteger(s.subtotalKrw,1,'COMMA')} + '원'"></div>
+        </div>
+        <span th:class="'chip chip-' + ${s.deliveryStatus}" th:text="${s.deliveryStatus}"></span>
+
+        <form th:if="${s.deliveryStatus == 'PENDING'}" th:action="@{/seller/orders/{id}/ship(id=${s.subOrderId})}" method="post">
+          <button type="submit" class="btn btn-primary btn-sm">배송 시작 →</button>
+        </form>
+        <form th:if="${s.deliveryStatus == 'SHIPPING'}" th:action="@{/seller/orders/{id}/deliver(id=${s.subOrderId})}" method="post">
+          <button type="submit" class="btn btn-primary btn-sm">배송 완료 →</button>
+        </form>
+        <span th:if="${s.deliveryStatus == 'DELIVERED'}" class="btn btn-disabled btn-sm">완료됨</span>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

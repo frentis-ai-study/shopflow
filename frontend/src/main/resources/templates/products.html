@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: common('상품 목록')}"></head>
+<body>
+<div class="page-shell">
+  <nav th:replace="~{fragments/nav :: nav}"></nav>
+
+  <div style="padding:44px 40px 20px;display:flex;justify-content:space-between;align-items:baseline">
+    <div class="serif" style="font-size:40px">Curated</div>
+    <form th:action="@{/products}" method="get" style="display:flex;gap:8px;align-items:center">
+      <input type="text" name="q" th:value="${query}" placeholder="상품 검색"
+             style="padding:9px 12px;border:1px solid var(--border);font-size:13px"/>
+      <button type="submit" class="btn btn-secondary btn-sm">검색</button>
+    </form>
+  </div>
+
+  <div class="container" style="padding-top:12px">
+    <div th:if="${#lists.isEmpty(products)}" class="empty-state">검색 결과가 없습니다.</div>
+    <div class="product-grid">
+      <a th:each="p : ${products}" th:href="@{/products/{id}(id=${p.id})}" class="product-card" style="color:inherit">
+        <div class="product-thumb">
+          <img th:if="${p.imageUrl}" th:src="${p.imageUrl}" th:alt="${p.name}"/>
+        </div>
+        <div class="product-meta">
+          <div>
+            <div class="product-seller" th:text="'판매자 #' + ${p.sellerId}">판매자</div>
+            <div class="product-name serif" th:text="${p.name}">상품명</div>
+          </div>
+          <div class="product-price" th:text="${#numbers.formatInteger(p.priceKrw,1,'COMMA')} + '원'">0원</div>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

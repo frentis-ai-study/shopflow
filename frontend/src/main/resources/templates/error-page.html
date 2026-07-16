@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: common('오류')}"></head>
+<body>
+<div class="page-shell">
+  <nav th:replace="~{fragments/nav :: nav}"></nav>
+  <div class="container-narrow" style="padding-top:80px;text-align:center">
+    <div class="serif" style="font-size:26px;margin-bottom:12px">요청을 처리할 수 없어요</div>
+    <div class="muted" style="margin-bottom:24px" th:text="${errorMessage}"></div>
+    <a th:href="@{/products}" class="btn btn-secondary">홈으로</a>
+  </div>
+</div>
+</body>
+</html>
