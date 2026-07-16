@@ -139,13 +139,13 @@ MVC는 후행) · PostgreSQL 16 · Flyway · Maven · JUnit 5 + Testcontainers
 
 ## Phase 8: 백엔드 Polish & 교차 관심사
 
-- [ ] T062 [P] 상태 전이 감사 로깅(주문·결제·배송) + 민감정보 마스킹 (원칙 IV) — 영속 감사 원장은 후속 보강 대상으로 명시
-- [ ] T063 [P] Spring Data REST 노출 하드닝 재점검(프로젝션·쓰기 제한)
-- [ ] T064 [P] 검증·오류 메시지 한글화(API 응답)
-- [ ] T065 [P] `dev-ports` 하드코딩 점검(포트 전부 환경변수)
-- [ ] T066 [P] `contracts/rest-api.md` — 백엔드 REST 계약(엔드포인트·페이로드·인증 전파·`/api` base-path) 문서화(프론트 착수 전제)
-- [ ] T067 quickstart S1~S8 백엔드(API) 검증
-- [ ] T068 [P] `CLAUDE.md` + README 아키텍처·실행 문서화
+- [X] T062 [P] 상태 전이 감사 로깅(주문·결제·배송) + 민감정보 마스킹 (원칙 IV) — 영속 감사 원장은 후속 보강 대상으로 명시
+- [X] T063 [P] Spring Data REST 노출 하드닝 재점검(프로젝션·쓰기 제한)
+- [X] T064 [P] 검증·오류 메시지 한글화(API 응답)
+- [X] T065 [P] `dev-ports` 하드코딩 점검(포트 전부 환경변수)
+- [X] T066 [P] `contracts/rest-api.md` — 백엔드 REST 계약(엔드포인트·페이로드·인증 전파·`/api` base-path) 문서화(프론트 착수 전제)
+- [X] T067 quickstart S1~S8 백엔드(API) 검증
+- [X] T068 [P] `CLAUDE.md` + README 아키텍처·실행 문서화
 - [ ] T069 코드리뷰 서브에이전트로 헌장 준수(테스트/결제·보안/무결성) 점검
 
 **Checkpoint(Part A 완료)**: 백엔드 서비스 전체 + REST 계약 확정. 프론트 착수 가능 상태.
