@@ -1,0 +1,12 @@
+# 통합 테스트용 — 로컬 compose PostgreSQL(dev-ports)에 직접 연결.
+# Testcontainers 대신 실행 중인 DB를 사용(로컬 검증). CI에서는 Testcontainers 프로파일 사용.
+spring:
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:15434}/${POSTGRES_DB:shopflow}
+    username: ${POSTGRES_USER:shopflow}
+    password: ${POSTGRES_PASSWORD:shopflow}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true

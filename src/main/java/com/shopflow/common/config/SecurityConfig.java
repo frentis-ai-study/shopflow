@@ -33,9 +33,13 @@ public class SecurityConfig {
                         // 그 외는 인증 필요 (세부 인가는 US3에서 강화)
                         .anyRequest().authenticated()
                 )
-                // 세션 기반 폼 로그인 (프론트 제어 레이어가 소비, ADR-0011). 상세는 T023.
+                // 세션 기반 폼 로그인 (프론트 제어 레이어가 소비, ADR-0011).
                 .formLogin(form -> form.loginProcessingUrl("/login").permitAll())
                 .logout(logout -> logout.logoutUrl("/logout").permitAll())
+                // REST 백엔드: 미인증 접근은 로그인 페이지 리다이렉트(302) 대신 401을 반환한다.
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(
+                        new org.springframework.security.web.authentication.HttpStatusEntryPoint(
+                                org.springframework.http.HttpStatus.UNAUTHORIZED)))
                 // REST API는 상태 변경에 CSRF 토큰 필요. 개발 편의상 API 경로 CSRF는 T023에서 정책 확정.
                 .csrf(AbstractHttpConfigurer::disable); // TODO(T023): CSRF 정책 확정(세션 기반 재활성)
 
