@@ -28,7 +28,9 @@ Thymeleaf, Bean Validation(Hibernate Validator), Flyway(마이그레이션)
 
 **Target Platform**: JVM / Linux 서버. 로컬 개발은 `BACKEND_PORT`(기본 18000) 환경변수.
 
-**Project Type**: 웹 애플리케이션(서버사이드 렌더링 모놀리스, 단일 프로젝트)
+**Project Type**: 웹 애플리케이션(서버사이드 렌더링). **추출 가능한 모듈러 모놀리스** — 지금은
+단일 배포 단위지만 컨텍스트별 스키마·모듈 경계·ID 참조로 짜서 추후 컨텍스트별 별도 인스턴스
+및 프론트 분리로 확장 가능(ADR-0010).
 
 **Performance Goals**: MVP 기준 일반 웹 응답성. 결제·재고 경합 경로에서 초과 판매 0(정확성
 우선). 구체 목표: 상품 목록/상세 P95 < 1s(일반 부하), 결제 처리 정확성 100%.
@@ -87,7 +89,7 @@ specs/001-marketplace-core/
 pom.xml                                 # Maven 빌드
 src/main/java/com/shopflow/
 ├── ShopFlowApplication.java
-├── account/          # 계정 컨텍스트 (User, Role)
+├── account/          # 계정 컨텍스트 (User, Role, Seller, SellerType, SellerStatus)
 │   ├── domain/  web/  repository/
 ├── product/          # 상품 컨텍스트 (Product, ProductStatus)
 │   ├── domain/  web/  repository/

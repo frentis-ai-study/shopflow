@@ -10,7 +10,8 @@
 ## 엔티티 개요 (ER 요약)
 
 ```text
-User 1─* Product           (판매자 소유)
+User 1─1 Seller            (SELLER 역할 시 판매자 프로필)
+Seller 1─* Product         (판매자 소유)
 User 1─1 Cart 1─* CartItem  (구매자 장바구니)
 User 1─* Order              (구매자 주문)
 Order 1─* SubOrder       (판매자별 하위주문 = 정산 단위)
@@ -44,12 +45,36 @@ Payment 1─1 PaymentIdempotency(key)
 - **Role**(enum): `BUYER`, `SELLER`.
 - 검증: email 형식·유일, 비밀번호 정책(길이 등).
 
+## Seller (판매자 프로필) — 계정 컨텍스트
+
+`SELLER` 역할을 가진 User의 판매 활동 정보. User와 1:1. (ADR-0009)
+
+| 필드 | 타입 | 설명·검증 |
+|---|---|---|
+| id | Long (PK) | 판매자 식별자 |
+| userId | Long (FK→User, UNIQUE) | 소유 사용자(1:1) |
+| sellerType | SellerType | 개인/개인사업자/법인 |
+| storeName | String | 스토어 표시명(구매자 노출), 필수 |
+| businessRegistrationNumber | String? | 사업자등록번호 — 사업자·법인이면 필수, 개인이면 없음 |
+| representativeName | String? | 대표자명 — 사업자·법인이면 필수 |
+| contactPhone | String | 연락처 |
+| contactEmail | String | 연락 이메일 |
+| status | SellerStatus | `ACTIVE`(입점중)/`SUSPENDED`(정지) |
+| createdAt | Instant | 생성 시각 |
+
+- **SellerType**(enum): `INDIVIDUAL`(개인) / `SOLE_PROPRIETOR`(개인사업자) / `CORPORATION`(법인).
+- **SellerStatus**(enum): `ACTIVE`, `SUSPENDED`. `SUSPENDED`면 신규 상품 등록·판매 제한.
+- **검증**:
+  - `sellerType != INDIVIDUAL`이면 `businessRegistrationNumber`·`representativeName` 필수.
+  - 사업자등록번호는 형식(자릿수) 검증, 중복 불가.
+- 정산 계좌·세금계산서 정보는 **정산 기능(후속 이슈)** 에서 확장한다.
+
 ## Product (상품)
 
 | 필드 | 타입 | 설명·검증 |
 |---|---|---|
 | id | Long (PK) | 식별자 |
-| sellerId | Long (FK→User) | 소유 판매자 (FR-009 권한 기준) |
+| sellerId | Long (FK→Seller) | 소유 판매자 (FR-009 권한 기준) |
 | name | String | 이름, 필수 |
 | description | String | 설명 |
 | priceKrw | long | 판매가(정수 원), ≥ 0 |
@@ -105,7 +130,7 @@ Payment 1─1 PaymentIdempotency(key)
 |---|---|---|
 | id | Long (PK) | 하위주문 식별자 |
 | orderId | Long (FK→Order) | 소속 주문 |
-| sellerId | Long (FK→User) | 담당 판매자 |
+| sellerId | Long (FK→Seller) | 담당 판매자 |
 | subtotalKrw | long | 이 판매자 분 소계(정수 원) — 향후 정산 기준 |
 
 - SubOrder는 **판매자별 금액·주문 단위**만 책임진다. 배송 상태·시각은 Delivery(배송 컨텍스트)가

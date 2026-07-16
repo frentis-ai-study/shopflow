@@ -22,6 +22,9 @@ skinparam ArrowColor #495057
 legend top left
   실선 화살표 = 같은 컨텍스트 내 관계 / 합성
   점선 «ref»  = 컨텍스트 경계를 넘는 ID 참조 (느슨한 결합)
+  ---
+  각 패키지 = 바운디드 컨텍스트 = 추출 가능 모듈 (ADR-0010).
+  컨텍스트 경계는 하드 FK가 아닌 ID 참조 → 추후 별도 인스턴스로 분리 가능.
 endlegend
 
 ' ===================== 계정 컨텍스트 =====================
@@ -34,18 +37,42 @@ package "계정 (Account)" <<Rectangle>> #EAF2FF {
     +roles : Set<Role>
     +createdAt : Instant
   }
+  class Seller {
+    +id : Long
+    +userId : Long <<unique>>
+    +sellerType : SellerType
+    +storeName : String
+    +businessRegistrationNumber : String
+    +representativeName : String
+    +contactPhone : String
+    +contactEmail : String
+    +status : SellerStatus
+    +createdAt : Instant
+  }
   enum Role {
     BUYER
     SELLER
   }
+  enum SellerType {
+    INDIVIDUAL
+    SOLE_PROPRIETOR
+    CORPORATION
+  }
+  enum SellerStatus {
+    ACTIVE
+    SUSPENDED
+  }
   User *-- Role
+  User "1" -- "1" Seller : 판매자 프로필
+  Seller ..> SellerType
+  Seller ..> SellerStatus
 }
 
 ' ===================== 상품 컨텍스트 =====================
 package "상품 (Product)" <<Rectangle>> #E6FCF5 {
   class Product {
     +id : Long
-    +sellerId : Long  <<ref: User>>
+    +sellerId : Long  <<ref: Seller>>
     +name : String
     +description : String
     +priceKrw : long
@@ -87,7 +114,7 @@ package "주문 (Order) — 장바구니 포함" <<Rectangle>> #F3F0FF {
   class SubOrder {
     +id : Long
     +orderId : Long
-    +sellerId : Long  <<ref: User>>
+    +sellerId : Long  <<ref: Seller>>
     +subtotalKrw : long
     .. 정산·주문 단위 (배송상태 없음) ..
   }
@@ -190,10 +217,10 @@ package "공통 (Common)" <<Rectangle>> #F1F3F5 {
 }
 
 ' ============ 컨텍스트 경계를 넘는 ID 참조 (느슨한 결합) ============
-User "1" <.. "*" Product : «ref» 판매자
+Seller "1" <.. "*" Product : «ref» 판매자
 User "1" <.. "1" Cart : «ref» 구매자
 User "1" <.. "*" Order : «ref» 구매자
-User "1" <.. "*" SubOrder : «ref» 담당 판매자
+Seller "1" <.. "*" SubOrder : «ref» 담당 판매자
 Product "1" <.. "*" CartItem : «ref»
 Product "1" <.. "*" OrderLine : «ref» (스냅샷)
 Product "1" <.. "*" StockReservation : «ref»
