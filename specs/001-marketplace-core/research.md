@@ -83,10 +83,12 @@
 
 ## R8. 빌드·마이그레이션·설정
 
-- **결정**: **Gradle** 빌드, **Flyway** 스키마 마이그레이션, `application.yml`에서 포트·DB·
-  시크릿을 환경변수(`BACKEND_PORT`, `POSTGRES_PORT`, DB 자격증명)로 바인딩.
+- **결정**: **Maven** 빌드, **Flyway** 스키마 마이그레이션, `application.yml`에서 포트·DB·
+  시크릿을 환경변수(`BACKEND_PORT`, `POSTGRES_PORT`, DB 자격증명)로 바인딩. Maven Wrapper
+  (`mvnw`)를 포함한다.
 - **근거**: 버전 관리되는 마이그레이션(원칙 III·기술 제약), 포트·시크릿 외부화(dev-ports 규칙).
-- **검토한 대안**: Maven도 가능하나 팀 선호·간결성으로 Gradle. 수기 DDL 대신 Flyway로 이력화.
+  Maven은 Spring Boot 표준 구성이 잘 알려져 있고 `pom.xml` 선언이 명시적이다.
+- **검토한 대안**: Gradle도 가능하나 사용자 요청에 따라 Maven 채택. 수기 DDL 대신 Flyway로 이력화.
 
 ---
 
@@ -101,6 +103,6 @@
 | 결제 | `PaymentGateway` 어댑터 + `MockPaymentGateway` |
 | 인증 | Spring Security 세션 + BCrypt + CSRF |
 | 금액 | 정수 원(long) / `Money` 값객체 |
-| 빌드/DB | Gradle + Flyway + 환경변수 설정 |
+| 빌드/DB | Maven(mvnw) + Flyway + 환경변수 설정 |
 
 모든 NEEDS CLARIFICATION 해소됨 → Phase 1 진행 가능.

@@ -84,7 +84,7 @@ specs/001-marketplace-core/
 단일 Spring Boot 프로젝트(모놀리스). 도메인 중심 패키지 구조.
 
 ```text
-build.gradle / settings.gradle          # Gradle 빌드
+pom.xml                                 # Maven 빌드
 src/main/java/com/shopflow/
 ├── ShopFlowApplication.java
 ├── account/          # 계정·인증 (User, 역할)

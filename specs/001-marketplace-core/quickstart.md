@@ -8,7 +8,7 @@
 
 ## 사전 준비
 
-- Java 21, Gradle
+- Java 21, Maven (프로젝트에 `mvnw` 래퍼 포함)
 - PostgreSQL 16 (로컬 또는 Testcontainers)
 - dev-ports 규칙: 포트는 환경변수로 주입. 최초 1회 셋업:
   ```bash
@@ -28,7 +28,7 @@
 
 ```bash
 # DB 준비(예: 로컬 도커) 후
-direnv exec . ./gradlew bootRun            # http://localhost:${BACKEND_PORT:-18000}
+direnv exec . ./mvnw spring-boot:run        # http://localhost:${BACKEND_PORT:-18000}
 ```
 
 ## 검증 시나리오
