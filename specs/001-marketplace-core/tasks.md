@@ -54,15 +54,15 @@ MVC는 후행) · PostgreSQL 16 · Flyway · Maven · JUnit 5 + Testcontainers
 **목표**: 가입·로그인·판매자 프로필과 인증·권한(REST/보안)이 동작한다(화면 제외).
 **독립 테스트**: API로 가입→로그인(세션)→보호 엔드포인트 접근/차단.
 
-- [ ] T016 [P] [US3] `test/unit/account/EmailPasswordPolicyTest.java` — 이메일 형식·중복·비밀번호 정책
-- [ ] T017 [P] [US3] `test/unit/account/SellerValidationTest.java` — 유형별 사업자등록번호·대표자 필수(개인 제외)
-- [ ] T018 [P] [US3] `test/web/account/AuthSecurityTest.java` — 로그인·CSRF·비인증 401/403
-- [ ] T019 [P] [US3] `account/domain/User.java`, `Role.java`
-- [ ] T020 [P] [US3] `account/domain/Seller.java`, `SellerType.java`, `SellerStatus.java`
-- [ ] T021 [US3] `account/repository/UserRepository.java`, `SellerRepository.java` (RestRepository, 조회 제한 노출·프로젝션)
-- [ ] T022 [US3] `account/domain/UserService.java`(가입·BCrypt), `SellerService.java`(유형별 검증)
-- [ ] T023 [US3] `common/config/SecurityConfig.java` 완성 — 로그인 처리·BCrypt·세션·권한
-- [ ] T024 [US3] `test/integration/AuthFlowIT.java` — 가입→로그인→보호 엔드포인트(Testcontainers)
+- [X] T016 [P] [US3] `test/unit/account/EmailPasswordPolicyTest.java` — 이메일 형식·중복·비밀번호 정책
+- [X] T017 [P] [US3] `test/unit/account/SellerValidationTest.java` — 유형별 사업자등록번호·대표자 필수(개인 제외)
+- [X] T018 [P] [US3] `test/web/account/AuthSecurityTest.java` — 로그인·CSRF·비인증 401/403
+- [X] T019 [P] [US3] `account/domain/User.java`, `Role.java`
+- [X] T020 [P] [US3] `account/domain/Seller.java`, `SellerType.java`, `SellerStatus.java`
+- [X] T021 [US3] `account/repository/UserRepository.java`, `SellerRepository.java` (RestRepository, 조회 제한 노출·프로젝션)
+- [X] T022 [US3] `account/domain/UserService.java`(가입·BCrypt), `SellerService.java`(유형별 검증)
+- [X] T023 [US3] `common/config/SecurityConfig.java` 완성 — 로그인 처리·BCrypt·세션·권한
+- [X] T024 [US3] `test/integration/AuthFlowIT.java` — 가입→로그인→보호 엔드포인트(Testcontainers)
 
 ---
 
