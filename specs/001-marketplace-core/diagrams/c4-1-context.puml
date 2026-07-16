@@ -1,0 +1,20 @@
+@startuml c4-1-context
+' ShopFlow — C4 Level 1: System Context
+!include <C4/C4_Context>
+
+title ShopFlow — C4 시스템 컨텍스트 (Level 1)
+
+Person(buyer, "구매자", "상품을 탐색·구매하고 주문을 확인한다")
+Person(seller, "판매자", "개인/개인사업자/법인. 상품 등록·재고 관리·배송 처리")
+
+System(shopflow, "ShopFlow", "멀티셀러 마켓플레이스. 구매·판매·결제·재고·배송을 제공한다")
+
+System_Ext(pg, "결제 게이트웨이", "결제 승인/거절. MVP는 모의 게이트웨이, 추후 실 PSP")
+
+Rel(buyer, shopflow, "상품 탐색·장바구니·결제·주문 조회", "HTTPS")
+Rel(seller, shopflow, "상품·재고 관리, 배송 상태 전이", "HTTPS")
+Rel(shopflow, pg, "결제 승인 요청(멱등키, 금액)", "HTTPS")
+Rel(pg, shopflow, "승인/거절 결과", "HTTPS")
+
+SHOW_LEGEND()
+@enduml

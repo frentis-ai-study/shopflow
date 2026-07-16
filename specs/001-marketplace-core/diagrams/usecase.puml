@@ -1,0 +1,86 @@
+@startuml usecase-marketplace-core
+' ShopFlow — 멀티셀러 핵심 커머스 (구매·판매) 유즈케이스 다이어그램
+' 근거: specs/001-marketplace-core/spec.md (액터 및 FR-001~025)
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam defaultFontName "Apple SD Gothic Neo"
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor #F5F7FF
+  BorderColor #3B5BDB
+  ArrowColor #3B5BDB
+}
+skinparam rectangle {
+  BorderColor #ADB5BD
+}
+
+left to right direction
+
+' ===== 액터 =====
+actor "방문자\n(Guest)" as Guest
+actor "구매자\n(Buyer)" as Buyer
+actor "판매자\n(Seller)" as Seller
+actor "모의 결제\n게이트웨이" as PG <<external>>
+
+' 역할 상속: 구매자/판매자는 가입한 사용자(방문자에서 전환)
+Guest <|-- Buyer
+Guest <|-- Seller
+
+rectangle "ShopFlow 시스템" {
+
+  ' ---- 계정·인증 (FR-001~005) ----
+  usecase "회원가입" as UC_SignUp
+  usecase "로그인 / 로그아웃" as UC_Login
+
+  ' ---- 판매 (FR-006~011) ----
+  usecase "상품 등록" as UC_AddProduct
+  usecase "상품 정보 수정\n(가격·재고)" as UC_EditProduct
+  usecase "판매 상태 전환\n(판매중/중지)" as UC_ToggleSale
+  usecase "내 주문(하위주문) 조회" as UC_SellerOrders
+  usecase "배송 상태 전이\n(배송중→배송완료)" as UC_Fulfill
+
+  ' ---- 구매 (FR-012~016) ----
+  usecase "상품 탐색·검색" as UC_Browse
+  usecase "상품 상세 보기" as UC_ViewProduct
+  usecase "장바구니 담기·수정" as UC_Cart
+  usecase "결제 (체크아웃)" as UC_Checkout
+  usecase "내 주문 조회" as UC_BuyerOrders
+}
+
+' ===== 액터 - 유즈케이스 연결 =====
+Guest --> UC_SignUp
+Guest --> UC_Login
+Guest --> UC_Browse
+Guest --> UC_ViewProduct
+
+Buyer --> UC_Cart
+Buyer --> UC_Checkout
+Buyer --> UC_BuyerOrders
+
+Seller --> UC_AddProduct
+Seller --> UC_EditProduct
+Seller --> UC_ToggleSale
+Seller --> UC_SellerOrders
+Seller --> UC_Fulfill
+
+' ===== 결제(체크아웃)는 외부 모의 게이트웨이와 직접 연동 =====
+UC_Checkout --> PG
+
+' 결제 내부 절차는 별도 유즈케이스로 분리하지 않고 체크아웃에 흡수(재사용 없는 내부 단계).
+' 요구사항 추적성은 아래 노트로 유지한다.
+note bottom of UC_Checkout
+  체크아웃에 포함된 내부 처리:
+  - 재고 선점 (TTL 10분, 미결제 시 자동 해제) — FR-017 / SC-005
+  - 서버측 금액 검증 — FR-019
+  - 멱등 결제 (재시도·중복에도 1회) — FR-018
+  - 판매자별 하위주문 분리 — FR-021
+end note
+
+note right of UC_Fulfill
+  배송완료 시각 기록 →
+  향후 정산 트리거 (후속 이슈)
+end note
+
+@enduml

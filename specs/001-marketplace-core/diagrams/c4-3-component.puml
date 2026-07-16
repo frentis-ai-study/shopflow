@@ -1,0 +1,101 @@
+@startuml c4-3-component
+' ShopFlow — C4 Level 3: Component (프론트 제어 MVC + REST 리포지토리 백엔드)
+!include <C4/C4_Component>
+LAYOUT_TOP_DOWN()
+
+title ShopFlow — C4 컴포넌트 (Level 3) · 프론트 제어 MVC + REST 리포지토리 백엔드 (ADR-0011)
+
+Person(buyer, "구매자")
+Person(seller, "판매자")
+System_Ext(pg, "결제 게이트웨이", "모의/실 PSP")
+ContainerDb(db, "PostgreSQL", "컨텍스트별 스키마")
+
+' ================= 프론트 제어 웹 (MVC) =================
+Container_Boundary(femvc, "프론트 제어 웹 (Spring MVC + Thymeleaf)") {
+  Component(pageCtl, "PageControllers", "Spring MVC", "탐색·장바구니·체크아웃·주문·판매자·인증 화면/폼/세션")
+  Component(apiClient, "RestApiClient", "RestClient/WebClient", "백엔드 REST 호출(리소스 CRUD + 도메인 연산)")
+  Component(views, "Thymeleaf Views", "템플릿", "서버사이드 렌더링(로직 최소)")
+}
+
+' ================= 백엔드 REST API =================
+Container_Boundary(api, "백엔드 REST API (Spring Data REST + 커스텀 REST)") {
+
+  Boundary(bAccount, "계정") {
+    Component(userRepoR, "UserRestRepository", "@RepositoryRestResource", "users (제한 노출)")
+    Component(sellerRepoR, "SellerRestRepository", "@RepositoryRestResource", "sellers")
+    Component(sellerSvc, "SellerService", "Service", "판매자 유형·사업자 검증")
+  }
+  Boundary(bProduct, "상품") {
+    Component(prodRepoR, "ProductRestRepository", "@RepositoryRestResource", "products 조회/관리")
+    Component(prodOps, "ProductOpsController", "커스텀 REST", "판매 상태 전환")
+    Component(prodSvc, "ProductService", "Service", "등록·수정 규칙")
+  }
+  Boundary(bOrder, "주문 (장바구니 포함)") {
+    Component(cartRepoR, "CartRestRepository", "@RepositoryRestResource", "carts/cart_items")
+    Component(orderRepoR, "OrderRestRepository", "@RepositoryRestResource", "orders 조회")
+    Component(checkoutCtl, "CheckoutController", "커스텀 REST", "체크아웃(멱등)")
+    Component(checkoutSvc, "CheckoutService", "Service(오케스트레이션)", "금액검증→선점→결제→주문/SubOrder→배송생성")
+    Component(orderSvc, "OrderService", "Service", "주문·SubOrder·상태 집계")
+  }
+  Boundary(bPayment, "결제") {
+    Component(paySvc, "PaymentService", "Service", "멱등 결제")
+    Component(payGw, "PaymentGateway", "Port", "결제 어댑터 계약")
+    Component(mockGw, "MockPaymentGateway", "Adapter", "성공/실패/멱등 시뮬레이션")
+    Component(idem, "IdempotencyStore", "Service", "멱등키(정확히 1회)")
+  }
+  Boundary(bInventory, "재고") {
+    Component(resvSvc, "ReservationService", "Service", "조건부 UPDATE 선점·확정·해제")
+    Component(sweeper, "ExpirySweeper", "@Scheduled", "TTL 만료 해제(SC-005)")
+  }
+  Boundary(bDelivery, "배송") {
+    Component(delRepoR, "DeliveryRestRepository", "@RepositoryRestResource", "deliveries 조회")
+    Component(delOps, "DeliveryOpsController", "커스텀 REST", "배송 전이 ship/deliver")
+    Component(delSvc, "DeliveryService", "Service", "PENDING→SHIPPING→DELIVERED")
+  }
+  Component(security, "SecurityConfig", "Spring Security", "인증·인가·CSRF (공통)")
+}
+
+' ---- 사용자 → 프론트 MVC ----
+Rel(buyer, pageCtl, "화면·폼", "HTTPS")
+Rel(seller, pageCtl, "화면·폼", "HTTPS")
+Rel(pageCtl, views, "렌더")
+Rel(pageCtl, apiClient, "데이터·연산 요청")
+
+' ---- 프론트 → 백엔드 REST ----
+Rel(apiClient, prodRepoR, "상품 조회/관리", "REST")
+Rel(apiClient, cartRepoR, "장바구니 CRUD", "REST")
+Rel(apiClient, orderRepoR, "주문 조회", "REST")
+Rel(apiClient, checkoutCtl, "체크아웃", "REST")
+Rel(apiClient, prodOps, "판매상태 전환", "REST")
+Rel(apiClient, delOps, "배송 전이", "REST")
+Rel(apiClient, sellerRepoR, "판매자 프로필", "REST")
+
+' ---- 백엔드 도메인 흐름 ----
+Rel(checkoutCtl, checkoutSvc, "실행")
+Rel(checkoutSvc, idem, "멱등 확인/기록")
+Rel(checkoutSvc, resvSvc, "재고 선점")
+Rel(checkoutSvc, paySvc, "결제")
+Rel(checkoutSvc, orderSvc, "주문·SubOrder 생성")
+Rel(checkoutSvc, delSvc, "Delivery(PENDING) 생성")
+Rel(paySvc, payGw, "authorize()")
+Rel(payGw, mockGw, "구현")
+Rel(mockGw, pg, "승인 요청", "HTTPS")
+Rel(delOps, delSvc, "전이")
+Rel(delSvc, orderSvc, "상태 집계 갱신")
+Rel(prodOps, prodSvc, "상태 전환")
+Rel(sellerRepoR, sellerSvc, "검증(이벤트/훅)")
+Rel(sweeper, resvSvc, "만료 해제")
+
+' ---- 영속 (리포지토리/서비스 → DB) ----
+Rel(userRepoR, db, "R/W", "JDBC")
+Rel(sellerRepoR, db, "R/W", "JDBC")
+Rel(prodRepoR, db, "R/W", "JDBC")
+Rel(cartRepoR, db, "R/W", "JDBC")
+Rel(orderRepoR, db, "R/W", "JDBC")
+Rel(orderSvc, db, "R/W", "JDBC")
+Rel(paySvc, db, "R/W", "JDBC")
+Rel(resvSvc, db, "R/W", "JDBC")
+Rel(delRepoR, db, "R/W", "JDBC")
+
+SHOW_LEGEND()
+@enduml

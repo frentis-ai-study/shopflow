@@ -1,0 +1,257 @@
+@startuml domain-class-marketplace-core
+' ShopFlow — 멀티셀러 핵심 커머스 도메인 클래스 다이어그램 (바운디드 컨텍스트)
+' 근거: specs/001-marketplace-core/data-model.md, plan.md 패키지 구조
+' 컨텍스트: 계정 / 상품 / 주문(장바구니 포함) / 결제 / 재고 / 배송 / 공통
+
+title ShopFlow 도메인 클래스 다이어그램 — 바운디드 컨텍스트별 (멀티셀러 핵심 커머스)
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "Apple SD Gothic Neo"
+skinparam classFontStyle bold
+skinparam packageStyle rectangle
+skinparam class {
+  BackgroundColor #FFFFFF
+  BorderColor #3B5BDB
+  AttributeFontColor #212529
+}
+skinparam enumBackgroundColor #FFF9DB
+skinparam enumBorderColor #F08C00
+skinparam ArrowColor #495057
+
+legend top left
+  실선 화살표 = 같은 컨텍스트 내 관계 / 합성
+  점선 «ref»  = 컨텍스트 경계를 넘는 ID 참조 (느슨한 결합)
+  ---
+  다중도: 1 = 정확히 하나, 0..1 = 선택(없거나 하나),
+          0..* = 없거나 여럿, 1..* = 하나 이상.
+  속성 [0..1] = 선택(nullable), 표기 없으면 필수(1).
+  ---
+  각 패키지 = 바운디드 컨텍스트 = 추출 가능 모듈 (ADR-0010).
+  컨텍스트 경계는 하드 FK가 아닌 ID 참조 → 추후 별도 인스턴스로 분리 가능.
+endlegend
+
+' ===================== 계정 컨텍스트 =====================
+package "계정 (Account)" <<Rectangle>> #EAF2FF {
+  class User {
+    +id : Long
+    +email : String <<unique>>
+    +passwordHash : String
+    +displayName : String
+    +roles : Set<Role>
+    +createdAt : Instant
+  }
+  class Seller {
+    +id : Long
+    +userId : Long <<unique>>
+    +sellerType : SellerType
+    +storeName : String
+    +businessRegistrationNumber : String [0..1]
+    +representativeName : String [0..1]
+    +contactPhone : String [0..1]
+    +contactEmail : String [0..1]
+    +status : SellerStatus
+    +createdAt : Instant
+  }
+  enum Role {
+    BUYER
+    SELLER
+  }
+  enum SellerType {
+    INDIVIDUAL
+    SOLE_PROPRIETOR
+    CORPORATION
+  }
+  enum SellerStatus {
+    ACTIVE
+    SUSPENDED
+  }
+  User "1" -- "1..*" Role
+  User "1" -- "0..1" Seller : 판매자 프로필
+  Seller ..> SellerType
+  Seller ..> SellerStatus
+}
+
+' ===================== 상품 컨텍스트 =====================
+package "상품 (Product)" <<Rectangle>> #E6FCF5 {
+  class Product {
+    +id : Long
+    +sellerId : Long  <<ref: Seller>>
+    +name : String
+    +description : String [0..1]
+    +priceKrw : long
+    +stock : int
+    +reserved : int
+    +imageUrl : String [0..1]
+    +status : ProductStatus
+    +version : long
+    --
+    availableStock() : int  ' stock - reserved
+  }
+  enum ProductStatus {
+    ON_SALE
+    OFF_SALE
+  }
+  Product ..> ProductStatus
+}
+
+' ===================== 주문 컨텍스트 (장바구니 포함) =====================
+package "주문 (Order) — 장바구니 포함" <<Rectangle>> #F3F0FF {
+  class Cart {
+    +id : Long
+    +buyerId : Long  <<ref: User>>
+  }
+  class CartItem {
+    +id : Long
+    +cartId : Long
+    +productId : Long  <<ref: Product>>
+    +quantity : int
+  }
+  class Order {
+    +id : Long
+    +buyerId : Long  <<ref: User>>
+    +totalKrw : long
+    +shippingAddress : Address
+    +status : OrderStatus
+    +placedAt : Instant
+  }
+  class SubOrder {
+    +id : Long
+    +orderId : Long
+    +sellerId : Long  <<ref: Seller>>
+    +subtotalKrw : long
+    .. 정산·주문 단위 (배송상태 없음) ..
+  }
+  class OrderLine {
+    +id : Long
+    +subOrderId : Long
+    +productId : Long  <<ref: Product>>
+    +productNameSnapshot : String
+    +unitPriceKrwSnapshot : long
+    +quantity : int
+  }
+  class Address <<value>> {
+    +recipient : String
+    +address : String
+    +phone : String
+  }
+  enum OrderStatus {
+    PAID
+    PARTIALLY_SHIPPED
+    SHIPPED
+    COMPLETED
+  }
+  Cart "1" *-- "0..*" CartItem : 항목
+  Order "1" *-- "1..*" SubOrder : 하위주문
+  SubOrder "1" *-- "1..*" OrderLine : 라인(스냅샷)
+  Order "1" *-- "1" Address
+  Order ..> OrderStatus
+}
+
+' ===================== 결제 컨텍스트 =====================
+package "결제 (Payment)" <<Rectangle>> #FFF4E6 {
+  class Payment {
+    +id : Long
+    +orderId : Long  <<ref: Order>>
+    +idempotencyKey : String <<unique>>
+    +amountKrw : long
+    +status : PaymentStatus
+    +gatewayRef : String [0..1]
+    +createdAt : Instant
+  }
+  class PaymentIdempotency {
+    +key : String <<pk>>
+    +requestHash : String
+    +status : String
+    +orderId : Long [0..1]
+    +createdAt : Instant
+  }
+  enum PaymentStatus {
+    APPROVED
+    REJECTED
+  }
+  Payment "1" --> "1" PaymentIdempotency : 멱등키 >
+  Payment ..> PaymentStatus
+  ' 멱등 레코드는 결제 확정 전 단계에도 존재 가능(주문 미생성) → orderId [0..1]
+}
+
+' ===================== 재고 컨텍스트 =====================
+package "재고 (Inventory)" <<Rectangle>> #FFF9DB {
+  class StockReservation {
+    +id : Long
+    +productId : Long  <<ref: Product>>
+    +buyerId : Long  <<ref: User>>
+    +quantity : int
+    +status : ReservationStatus
+    +expiresAt : Instant
+    +createdAt : Instant
+  }
+  enum ReservationStatus {
+    HELD
+    CONFIRMED
+    RELEASED
+  }
+  StockReservation ..> ReservationStatus
+}
+
+' ===================== 배송 컨텍스트 =====================
+package "배송 (Delivery)" <<Rectangle>> #E7F5FF {
+  class Delivery {
+    +id : Long
+    +subOrderId : Long  <<ref: SubOrder>>
+    +status : DeliveryStatus
+    +shippedAt : Instant [0..1]
+    +deliveredAt : Instant [0..1]
+  }
+  enum DeliveryStatus {
+    PENDING
+    SHIPPING
+    DELIVERED
+  }
+  Delivery ..> DeliveryStatus
+}
+
+' ===================== 공통 =====================
+package "공통 (Common)" <<Rectangle>> #F1F3F5 {
+  class Money <<value>> {
+    +amountKrw : long
+    --
+    plus(Money) : Money
+    times(int) : Money
+  }
+}
+
+' ============ 컨텍스트 경계를 넘는 ID 참조 (느슨한 결합) ============
+Seller "1" <.. "0..*" Product : «ref» 판매자
+User "1" <.. "0..1" Cart : «ref» 구매자
+User "1" <.. "0..*" Order : «ref» 구매자
+Seller "1" <.. "0..*" SubOrder : «ref» 담당 판매자
+Product "1" <.. "0..*" CartItem : «ref»
+Product "1" <.. "0..*" OrderLine : «ref» (스냅샷)
+Product "1" <.. "0..*" StockReservation : «ref»
+User "1" <.. "0..*" StockReservation : «ref» 구매자
+Order "1" <.. "1" Payment : «ref»
+SubOrder "1" <.. "1" Delivery : «ref» 1:1
+
+note bottom of Product
+  불변식: 0 ≤ reserved ≤ stock (초과 판매 0)
+  선점/해제/확정은 조건부 UPDATE로 원자 처리
+end note
+
+note bottom of OrderLine
+  결제 시점 단가·상품명 스냅샷 →
+  이후 상품 변경이 주문에 영향 없음 (FR-023)
+end note
+
+note bottom of Delivery
+  결제 완료 시 SubOrder마다 PENDING 생성.
+  판매자가 SHIPPING→DELIVERED 전이(FR-011).
+  향후 송장·추적·부분배송 확장 지점.
+end note
+
+note top of Money
+  금액 값객체 — 모든 컨텍스트의
+  금액 필드(priceKrw/totalKrw/…)에 적용
+end note
+
+@enduml
