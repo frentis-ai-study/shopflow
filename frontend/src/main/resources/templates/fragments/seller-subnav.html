@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="subnav" style="display:flex;gap:10px;margin-bottom:22px">
+  <a th:href="@{/seller/orders}" class="btn btn-sm"
+     th:classappend="${sellerSection == 'orders'} ? 'btn-primary' : 'btn-secondary'">주문·배송</a>
+  <a th:href="@{/seller/products}" class="btn btn-sm"
+     th:classappend="${sellerSection == 'products'} ? 'btn-primary' : 'btn-secondary'">내 상품</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: common('회원가입')}"></head>
+<body>
+<div class="page-shell">
+  <nav th:replace="~{fragments/nav :: nav}"></nav>
+  <div class="container-narrow" style="padding-top:64px">
+    <div style="text-align:center;display:flex;flex-direction:column;gap:8px;margin-bottom:24px">
+      <div class="serif" style="font-size:30px">회원가입</div>
+      <div class="muted" style="font-size:13.5px">ShopFlow에서 사고팔아 보세요</div>
+    </div>
+    <div th:if="${errorMessage}" class="form-error" th:text="${errorMessage}"></div>
+    <form th:action="@{/signup}" method="post">
+      <div class="form-field">
+        <label>이메일</label>
+        <input type="email" name="email" th:value="${email}" required/>
+      </div>
+      <div class="form-field">
+        <label>비밀번호 (8자 이상)</label>
+        <input type="password" name="password" minlength="8" required/>
+      </div>
+      <div class="form-field">
+        <label>표시명</label>
+        <input type="text" name="displayName" th:value="${displayName}" required/>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%">가입하기</button>
+    </form>
+    <div style="text-align:center;font-size:13px;margin-top:16px" class="muted">
+      이미 계정이 있으신가요? <a th:href="@{/login}">로그인</a>
+    </div>
+  </div>
+</div>
+</body>
+</html>

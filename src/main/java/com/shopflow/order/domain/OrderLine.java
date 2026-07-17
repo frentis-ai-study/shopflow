@@ -47,6 +47,26 @@ public class OrderLine {
         return id;
     }
 
+    public Long getSubOrderId() {
+        return subOrderId;
+    }
+
+    public Long getProductId() {
+        return productId;
+    }
+
+    public String getProductNameSnapshot() {
+        return productNameSnapshot;
+    }
+
+    public long getUnitPriceKrwSnapshot() {
+        return unitPriceKrwSnapshot;
+    }
+
+    public int getQuantity() {
+        return quantity;
+    }
+
     public long lineTotal() {
         return unitPriceKrwSnapshot * quantity;
     }

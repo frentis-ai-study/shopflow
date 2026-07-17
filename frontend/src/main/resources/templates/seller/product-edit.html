@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: common('상품 관리')}"></head>
+<body>
+<div class="page-shell">
+  <nav th:replace="~{fragments/nav :: nav}"></nav>
+  <div class="container-narrow">
+    <div class="serif" style="font-size:26px;margin-bottom:20px">상품 관리</div>
+    <div th:if="${errorMessage}" class="form-error" th:text="${errorMessage}"></div>
+
+    <form th:action="@{/seller/products/{id}(id=${product.id})}" method="post" style="margin-bottom:28px">
+      <div class="form-field"><label>상품명</label><input type="text" name="name" th:value="${product.name}" required/></div>
+      <div class="form-field"><label>설명</label><textarea name="description" rows="3" th:text="${product.description}"></textarea></div>
+      <div class="form-field"><label>가격(원)</label><input type="number" name="priceKrw" th:value="${product.priceKrw}" min="0" required/></div>
+      <div class="form-field"><label>이미지 URL</label><input type="text" name="imageUrl" th:value="${product.imageUrl}"/></div>
+      <button type="submit" class="btn btn-primary">정보 저장</button>
+    </form>
+
+    <hr class="divider" style="margin-bottom:20px"/>
+
+    <div style="display:flex;gap:20px;margin-bottom:20px">
+      <form th:action="@{/seller/products/{id}/stock(id=${product.id})}" method="post" style="flex:1;display:flex;gap:8px;align-items:flex-end">
+        <div class="form-field" style="flex:1;margin-bottom:0"><label>재고 수량 변경</label><input type="number" name="stock" min="0" required/></div>
+        <button type="submit" class="btn btn-secondary btn-sm">변경</button>
+      </form>
+      <form th:action="@{/seller/products/{id}/status(id=${product.id})}" method="post" style="display:flex;gap:8px;align-items:flex-end">
+        <input type="hidden" name="status" th:value="${product.status == 'ON_SALE'} ? 'OFF_SALE' : 'ON_SALE'"/>
+        <button type="submit" class="btn btn-secondary btn-sm"
+                th:text="${product.status == 'ON_SALE'} ? '판매 중지' : '판매 재개'"></button>
+      </form>
+    </div>
+
+    <a th:href="@{/seller/products}" class="muted" style="font-size:13px">← 목록으로</a>
+  </div>
+</div>
+</body>
+</html>

@@ -57,9 +57,24 @@ direnv exec . ./mvnw spring-boot:run       # http://localhost:${BACKEND_PORT:-18
 direnv exec . ./mvnw test
 ```
 
-- 백엔드 REST 리소스는 `/api` 하위(ADR-0011). 프론트엔드는 외부 디자인 완료 후 별도 인스턴스로
-  이 REST를 소비한다(ADR-0010 v2).
+- 백엔드 REST 리소스는 `/api` 하위(ADR-0011). 프론트엔드는 별도 인스턴스로 이 REST를
+  소비한다(ADR-0010 v2).
 - 스키마는 Flyway(`src/main/resources/db/migration`)로 관리하며, JPA는 `ddl-auto=validate`.
+
+## 로컬 실행 (프론트엔드)
+
+프론트엔드는 백엔드와 **별도 Maven 프로젝트**(`frontend/`)이며 별도 인스턴스로 기동한다.
+백엔드 세션을 릴레이하는 BFF(Backend-for-Frontend) 패턴으로 백엔드 REST만 소비한다.
+
+```bash
+# 백엔드가 먼저 실행 중이어야 한다(위 절 참고)
+cd frontend
+direnv exec .. ./mvnw spring-boot:run       # http://localhost:${FRONTEND_PORT:-13000}
+```
+
+- `BACKEND_API_BASE_URL`(기본 `http://localhost:${BACKEND_PORT}`)로 백엔드 주소를 주입한다.
+- 화면: 상품 탐색/상세, 가입/로그인, 장바구니, 체크아웃, 주문 조회, 판매자 등록/상품관리/배송 처리.
+- 디자인은 제공된 UI 프로토타입에서 추출한 토큰(`frontend/src/main/resources/static/css/shopflow.css`)을 따른다.
 
 ## 라이선스
 

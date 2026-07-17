@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: common('장바구니')}"></head>
+<body>
+<div class="page-shell">
+  <nav th:replace="~{fragments/nav :: nav}"></nav>
+  <div class="container">
+    <div class="serif" style="font-size:30px;margin-bottom:24px">장바구니</div>
+
+    <div th:if="${empty}" class="empty-state">
+      장바구니가 비어 있어요. <a th:href="@{/products}">쇼핑하러 가기 →</a>
+    </div>
+
+    <div th:unless="${empty}" style="display:grid;grid-template-columns:1fr 340px;gap:40px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:22px">
+        <div class="card" th:each="g : ${sellerGroups}">
+          <div style="padding:14px 20px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:8px;font-size:13px">
+            <span class="muted">🏪</span><span style="font-weight:600" th:text="'판매자 #' + ${g.sellerId}"></span>
+          </div>
+          <div th:each="it : ${g.items}" style="padding:18px 20px;display:flex;gap:16px;align-items:center;border-bottom:1px solid var(--border-lighter)">
+            <div style="width:74px;height:92px;background:repeating-linear-gradient(45deg,#E7E1D6 0 8px,#EFEAE0 8px 16px);overflow:hidden">
+              <img th:if="${it.imageUrl}" th:src="${it.imageUrl}" th:alt="${it.name}" style="width:100%;height:100%;object-fit:cover;display:block"/>
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:5px">
+              <div style="font-size:14px" th:text="${it.name}"></div>
+              <div class="muted" style="font-size:12px" th:text="${#numbers.formatInteger(it.priceKrw,1,'COMMA')} + '원'"></div>
+            </div>
+            <form th:action="@{/cart/items/{id}(id=${it.itemId})}" method="post" class="stepper sm">
+              <input type="hidden" name="quantity" th:value="${it.quantity - 1}"/>
+              <button type="submit" th:disabled="${it.quantity <= 1}">−</button>
+              <span th:text="${it.quantity}"></span>
+            </form>
+            <form th:action="@{/cart/items/{id}(id=${it.itemId})}" method="post" style="display:inline">
+              <input type="hidden" name="quantity" th:value="${it.quantity + 1}"/>
+              <button type="submit" class="btn btn-secondary btn-sm" style="padding:8px 12px">+</button>
+            </form>
+            <div style="width:104px;text-align:right;font-weight:600" th:text="${#numbers.formatInteger(it.lineTotal,1,'COMMA')} + '원'"></div>
+            <form th:action="@{/cart/items/{id}/delete(id=${it.itemId})}" method="post">
+              <button type="submit" class="faint" style="background:none;border:none;font-size:15px;cursor:pointer">×</button>
+            </form>
+          </div>
+          <div style="padding:12px 20px;display:flex;justify-content:space-between;font-size:12.5px;color:var(--text-secondary)">
+            <span>판매자 소계</span>
+            <span style="font-weight:600" th:text="${#numbers.formatInteger(g.subtotal,1,'COMMA')} + '원'"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-strong" style="padding:26px 24px;display:flex;flex-direction:column;gap:14px">
+        <div class="section-label">주문 요약</div>
+        <div style="display:flex;justify-content:space-between;font-size:13.5px;color:var(--text-secondary)">
+          <span>상품 합계</span><span th:text="${#numbers.formatInteger(cartTotal,1,'COMMA')} + '원'"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13.5px;color:var(--text-secondary)">
+          <span>배송비</span><span>0원</span>
+        </div>
+        <hr class="divider"/>
+        <div style="display:flex;justify-content:space-between;align-items:baseline">
+          <span style="font-size:14px">합계</span>
+          <span style="font-size:22px;font-weight:600" th:text="${#numbers.formatInteger(cartTotal,1,'COMMA')} + '원'"></span>
+        </div>
+        <div class="faint" style="font-size:11.5px">금액은 결제 시 서버에서 재계산·검증됩니다</div>
+        <a th:href="@{/checkout}" class="btn btn-primary">결제하기</a>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

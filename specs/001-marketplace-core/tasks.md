@@ -157,14 +157,14 @@ MVC는 후행) · PostgreSQL 16 · Flyway · Maven · JUnit 5 + Testcontainers
 > **선행 조건**: (1) Part A 백엔드 REST 계약(T066) 확정, (2) 외부 디자인 산출물(화면 시안·
 > 디자인 토큰) 수령. 프론트는 백엔드와 **별도 인스턴스**로 REST를 소비한다(ADR-0010 v2, 0011).
 
-- [ ] T070 [FE] `webmvc/client/RestApiClient.java` — 백엔드 REST 호출(RestClient), 인증 전파
-- [ ] T071 [FE] 디자인 산출물 기반 공통 레이아웃·디자인 토큰 적용(`templates/`, static)
-- [ ] T072 [FE] [US3] 인증 화면 — Signup/Login PageController + 템플릿
-- [ ] T073 [FE] [US2] 상품 탐색·검색·상세 화면(구매자)
-- [ ] T074 [FE] [US2] 판매자 상품 관리 화면(목록·등록·수정)
-- [ ] T075 [FE] [US1] 장바구니·체크아웃·완료 화면(멱등키 처리·선점 타이머 노출)
-- [ ] T076 [FE] [US4] 판매자 주문·배송 처리 화면
-- [ ] T077 [FE] [US5] 구매자 주문 목록·상세 화면
+- [X] T070 [FE] `webmvc/client/RestApiClient.java` — 백엔드 REST 호출(RestClient), 인증 전파
+- [X] T071 [FE] 디자인 산출물 기반 공통 레이아웃·디자인 토큰 적용(`templates/`, static)
+- [X] T072 [FE] [US3] 인증 화면 — Signup/Login PageController + 템플릿
+- [X] T073 [FE] [US2] 상품 탐색·검색·상세 화면(구매자)
+- [X] T074 [FE] [US2] 판매자 상품 관리 화면(목록·등록·수정)
+- [X] T075 [FE] [US1] 장바구니·체크아웃·완료 화면(멱등키 처리·선점 타이머 노출)
+- [X] T076 [FE] [US4] 판매자 주문·배송 처리 화면
+- [X] T077 [FE] [US5] 구매자 주문 목록·상세 화면
 - [ ] T078 [FE] 프론트 인스턴스 분리 배포 구성(별도 앱/포트, `FRONTEND_PORT`) + Playwright E2E(백엔드 연동)
 
 ---

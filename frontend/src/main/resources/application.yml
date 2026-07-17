@@ -1,0 +1,18 @@
+# ShopFlow 프론트엔드(BFF) 설정. 백엔드와 별도 인스턴스(ADR-0010 v2). 포트는 dev-ports 경유.
+server:
+  port: ${FRONTEND_PORT:13000}
+
+spring:
+  application:
+    name: shopflow-frontend
+  thymeleaf:
+    cache: false
+
+shopflow:
+  backend:
+    base-url: ${BACKEND_API_BASE_URL:http://localhost:${BACKEND_PORT:18000}}
+
+logging:
+  level:
+    root: INFO
+    com.shopflow.frontend: DEBUG

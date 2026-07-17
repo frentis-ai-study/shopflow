@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="nav" class="topnav">
+  <div class="navgroup">
+    <a class="brand serif" th:href="@{/products}">ShopFlow</a>
+    <div class="navlinks">
+      <a th:href="@{/products}">전체</a>
+      <a th:href="@{/seller}">판매자 센터</a>
+    </div>
+  </div>
+  <div class="navright">
+    <a th:href="@{/orders}">내 주문</a>
+    <a th:if="${loggedIn}" th:href="@{/logout}"
+       onclick="event.preventDefault();document.getElementById('logoutForm').submit();">로그아웃</a>
+    <a th:unless="${loggedIn}" th:href="@{/login}">로그인</a>
+    <a class="cart-link" th:href="@{/cart}">장바구니
+      <span th:if="${cartCount != null and cartCount > 0}" class="cart-badge" th:text="${cartCount}">0</span>
+    </a>
+  </div>
+</div>
+<form id="logoutForm" method="post" th:action="@{/logout}" style="display:none"></form>
+</body>
+</html>
